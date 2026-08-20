@@ -15,6 +15,15 @@
   Hay que DESCONECTAR el HC-05 antes de subir este sketch por USB, o la
   carga va a fallar.
 
+  Este sketch esta dividido en varias pestañas (archivos .ino) dentro de
+  esta misma carpeta. El IDE de Arduino las junta todas en un solo
+  programa al compilar, asi que las funciones y variables de una pestaña
+  se pueden usar en cualquier otra sin necesidad de #include:
+    Futbol.ino    - este archivo: configuracion y logica de alto nivel
+    Bluetooth.ino - lectura y traduccion de los comandos del HC-05
+    Motores.ino   - control de los motores (driver DRV8833)
+    Extras.ino    - bocina y boton de turbo
+
   Ver docs/FSD.md para el detalle completo del diseño.
 */
 
@@ -37,13 +46,11 @@
 
 #define PIN_BUZZER 8
 
-// ===================== CONSTANTES DE CALIBRACION =====================
-
-const int VELOCIDAD_NORMAL = 150;  // PWM (0-255) en modo normal
-const int VELOCIDAD_TURBO  = 255;  // PWM (0-255) en modo turbo
-
 // ===================== VARIABLES DE ESTADO =====================
 
+// modoTurbo se usa en mas de una pestaña: Extras.ino lo cambia (boton de
+// turbo) y Motores.ino lo lee (para elegir la velocidad). Por eso queda
+// declarada aca, en el archivo principal.
 bool modoTurbo = false;
 bool estadoAnteriorBotonTurbo = HIGH;  // para detectar el flanco de apretar
 
@@ -77,131 +84,4 @@ void loop() {
   revisarBotonBocina();
   revisarBotonTurbo();
   revisarBluetooth();
-}
-
-// ===================== BOTONES =====================
-
-void revisarBotonBocina() {
-  if (digitalRead(PIN_BOTON_BOCINA) == LOW) {
-    tocarBocina();
-  }
-}
-
-void revisarBotonTurbo() {
-  bool estadoActual = digitalRead(PIN_BOTON_TURBO);
-
-  // Solo actuar en el flanco: el instante en que el boton pasa de
-  // "no apretado" a "apretado". Asi un toque = un solo cambio de modo.
-  if (estadoActual == LOW && estadoAnteriorBotonTurbo == HIGH) {
-    modoTurbo = !modoTurbo;
-    digitalWrite(PIN_LED_TURBO, modoTurbo ? HIGH : LOW);
-    delay(50);  // antirrebote simple
-  }
-
-  estadoAnteriorBotonTurbo = estadoActual;
-}
-
-// ===================== BLUETOOTH =====================
-
-void revisarBluetooth() {
-  if (!Serial.available()) {
-    return;
-  }
-
-  char comando = Serial.read();
-  digitalWrite(PIN_LED_ACTIVIDAD, HIGH);
-
-  switch (comando) {
-    case 'F':
-      avanzar();
-      break;
-    case 'B':
-      retroceder();
-      break;
-    case 'L':
-      girarIzquierda();
-      break;
-    case 'R':
-      girarDerecha();
-      break;
-    case 'S':
-      detenerMotores();
-      break;
-    case 'H':
-      tocarBocina();
-      break;
-    default:
-      // Caracter desconocido (por ejemplo saltos de linea): se ignora.
-      break;
-  }
-
-  digitalWrite(PIN_LED_ACTIVIDAD, LOW);
-}
-
-// ===================== MOVIMIENTOS =====================
-
-int velocidadActual() {
-  return modoTurbo ? VELOCIDAD_TURBO : VELOCIDAD_NORMAL;
-}
-
-void avanzar() {
-  motorIzquierdo(velocidadActual());
-  motorDerecho(velocidadActual());
-}
-
-void retroceder() {
-  motorIzquierdo(-velocidadActual());
-  motorDerecho(-velocidadActual());
-}
-
-void girarIzquierda() {
-  motorIzquierdo(-velocidadActual());
-  motorDerecho(velocidadActual());
-}
-
-void girarDerecha() {
-  motorIzquierdo(velocidadActual());
-  motorDerecho(-velocidadActual());
-}
-
-void detenerMotores() {
-  motorIzquierdo(0);
-  motorDerecho(0);
-}
-
-// ===================== CONTROL DE MOTORES (DRV8833) =====================
-//
-// Cada motor se maneja con dos pines "A" y "B". Para el driver DRV8833:
-//   - Adelante:     A = PWM (velocidad), B = LOW
-//   - Atras:        A = LOW, B = PWM (velocidad)
-//   - Punto muerto: A = LOW, B = LOW (sin corriente, la rueda gira libre)
-//
-// velocidad va de -255 a 255: positivo = adelante, negativo = atras,
-// 0 = detenido.
-
-void motorIzquierdo(int velocidad) {
-  aplicarVelocidadMotor(PIN_MOTOR_IZQ_A, PIN_MOTOR_IZQ_B, velocidad);
-}
-
-void motorDerecho(int velocidad) {
-  aplicarVelocidadMotor(PIN_MOTOR_DER_A, PIN_MOTOR_DER_B, velocidad);
-}
-
-void aplicarVelocidadMotor(int pinA, int pinB, int velocidad) {
-  if (velocidad > 0) {
-    analogWrite(pinA, velocidad);
-    digitalWrite(pinB, LOW);
-  } else if (velocidad < 0) {
-    digitalWrite(pinA, LOW);
-    analogWrite(pinB, -velocidad);
-  } else {
-    digitalWrite(pinA, LOW);
-    digitalWrite(pinB, LOW);
-  }
-}
-
-// ===================== BOCINA =====================
-
-void tocarBocina() {
-  tone(PIN_BUZZER, 2000, 200);
 }

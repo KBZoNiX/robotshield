@@ -20,6 +20,22 @@
   El boton 2 funciona en cualquier momento como parada de emergencia y
   vuelve el robot a ESPERA.
 
+  Este sketch esta dividido en varias pestañas (archivos .ino) dentro de
+  esta misma carpeta. El IDE de Arduino las junta todas en un solo
+  programa al compilar, asi que las funciones y variables de una pestaña
+  se pueden usar en cualquier otra sin necesidad de #include:
+    MiniSumo.ino        - este archivo: configuracion, enum Estado y loop()
+    MaquinaDeEstado.ino - que hace el robot en cada estado
+    Sensores.ino        - lectura "cruda" de sensores (borde, ultrasonico, boton de emergencia)
+    Motores.ino         - control de los motores (driver DRV8833, igual que en Futbol)
+    Extras.ino          - funciones sueltas (LED parpadeante)
+
+  El enum Estado y la variable estadoActual quedan declarados en este
+  archivo, y no en MaquinaDeEstado.ino, aunque son parte de la logica de
+  decision: este es el archivo "principal" del sketch (el IDE siempre lo
+  compila primero) y el switch de loop(), mas abajo, los necesita ya
+  declarados.
+
   Ver docs/FSD.md para el detalle completo del diseño.
 */
 
@@ -86,8 +102,6 @@ enum Estado {
 };
 
 Estado estadoActual = ESPERA;
-
-bool estadoAnteriorBotonArmar = HIGH;
 
 // ===================== SETUP =====================
 
@@ -157,215 +171,4 @@ void loop() {
       // (ver 4.5 del FSD) y termina dejando estadoActual en BUSQUEDA.
       break;
   }
-}
-
-// ===================== ESTADO: ESPERA =====================
-
-void entrarEnEspera() {
-  estadoActual = ESPERA;
-  detenerMotores();
-  digitalWrite(PIN_LED_ARMADO, LOW);
-  digitalWrite(PIN_LED_BUSQUEDA, LOW);
-  digitalWrite(PIN_LED_EVASION, LOW);
-}
-
-void manejarEspera() {
-  bool estadoActualBoton = digitalRead(PIN_BOTON_ARMAR);
-
-  if (estadoActualBoton == LOW && estadoAnteriorBotonArmar == HIGH) {
-    delay(50);  // antirrebote simple
-    estadoActual = CUENTA_REGRESIVA;
-  }
-
-  estadoAnteriorBotonArmar = estadoActualBoton;
-}
-
-// ===================== ESTADO: CUENTA_REGRESIVA =====================
-//
-// El robot todavia no se mueve, asi que no hace falta revisar sensores
-// aca: un delay() bloqueante por bip es aceptable.
-
-void manejarCuentaRegresiva() {
-  for (int bip = 0; bip < CANTIDAD_BIPS_CUENTA_REGRESIVA; bip++) {
-    digitalWrite(PIN_LED_ARMADO, HIGH);
-    tone(PIN_BUZZER, 2000, 150);
-    delay(DURACION_BIP_CUENTA_REGRESIVA_MS / 2);
-    digitalWrite(PIN_LED_ARMADO, LOW);
-    delay(DURACION_BIP_CUENTA_REGRESIVA_MS / 2);
-  }
-
-  digitalWrite(PIN_LED_ARMADO, HIGH);
-  estadoActual = BUSQUEDA;
-}
-
-// ===================== ESTADO: BUSQUEDA =====================
-
-void manejarBusqueda() {
-  parpadearLed(PIN_LED_BUSQUEDA);
-
-  girarBuscando();
-
-  if (hayRivalDetectado()) {
-    estadoActual = ATAQUE;
-    digitalWrite(PIN_LED_BUSQUEDA, HIGH);
-  }
-}
-
-void girarBuscando() {
-  // Sin servo, el sensor ultrasonico apunta siempre al frente: "buscar"
-  // es girar en el lugar hasta que el sensor detecte algo.
-  motorIzquierdo(VELOCIDAD_BUSQUEDA);
-  motorDerecho(-VELOCIDAD_BUSQUEDA);
-}
-
-// ===================== ESTADO: ATAQUE =====================
-
-void manejarAtaque() {
-  digitalWrite(PIN_LED_BUSQUEDA, HIGH);
-
-  if (hayRivalDetectado()) {
-    motorIzquierdo(VELOCIDAD_ATAQUE);
-    motorDerecho(VELOCIDAD_ATAQUE);
-  } else {
-    estadoActual = BUSQUEDA;
-  }
-}
-
-// ===================== ESTADO: EVASION =====================
-
-void manejarEvasion() {
-  estadoActual = EVASION;
-  digitalWrite(PIN_LED_EVASION, HIGH);
-
-  bool bordeIzquierdo = lecturaBorde(SENSOR_BORDE_IZQUIERDO) > UMBRAL_BORDE;
-  bool bordeDerecho = lecturaBorde(SENSOR_BORDE_DERECHO) > UMBRAL_BORDE;
-
-  // Retroceder primero, alejandose del borde en linea recta.
-  motorIzquierdo(-VELOCIDAD_EVASION);
-  motorDerecho(-VELOCIDAD_EVASION);
-  delay(DURACION_RETROCESO_EVASION_MS);
-
-  // Girar alejandose del lado que detecto el borde. Si fue el frontal,
-  // o los dos a la vez, se usa una direccion por defecto (derecha).
-  if (bordeIzquierdo && !bordeDerecho) {
-    motorIzquierdo(VELOCIDAD_EVASION);
-    motorDerecho(-VELOCIDAD_EVASION);
-  } else {
-    motorIzquierdo(-VELOCIDAD_EVASION);
-    motorDerecho(VELOCIDAD_EVASION);
-  }
-  delay(DURACION_GIRO_EVASION_MS);
-
-  digitalWrite(PIN_LED_EVASION, LOW);
-  estadoActual = BUSQUEDA;
-}
-
-// ===================== SENSORES: BORDE / LINEA =====================
-
-int lecturaBorde(int pinSensor) {
-  return analogRead(pinSensor);
-}
-
-bool hayBordeDetectado() {
-  return lecturaBorde(SENSOR_BORDE_IZQUIERDO) > UMBRAL_BORDE ||
-         lecturaBorde(SENSOR_BORDE_DERECHO) > UMBRAL_BORDE ||
-         lecturaBorde(SENSOR_BORDE_FRONTAL) > UMBRAL_BORDE;
-}
-
-void imprimirLecturasDeBorde() {
-  static unsigned long ultimaImpresion = 0;
-
-  if (millis() - ultimaImpresion < 500) {
-    return;
-  }
-  ultimaImpresion = millis();
-
-  Serial.print("Borde izq: ");
-  Serial.print(lecturaBorde(SENSOR_BORDE_IZQUIERDO));
-  Serial.print("  Borde der: ");
-  Serial.print(lecturaBorde(SENSOR_BORDE_DERECHO));
-  Serial.print("  Borde frontal: ");
-  Serial.println(lecturaBorde(SENSOR_BORDE_FRONTAL));
-}
-
-// ===================== SENSOR: ULTRASONICO (RIVAL) =====================
-
-bool hayRivalDetectado() {
-  int distancia = medirDistanciaCM();
-  return distancia > 0 && distancia <= DISTANCIA_DETECCION_CM;
-}
-
-int medirDistanciaCM() {
-  digitalWrite(PIN_ULTRA_TRIGGER, LOW);
-  delayMicroseconds(2);
-  digitalWrite(PIN_ULTRA_TRIGGER, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(PIN_ULTRA_TRIGGER, LOW);
-
-  // Timeout de 20ms (~3.4m de alcance) para no bloquear el programa si
-  // no llega eco.
-  unsigned long duracionPulso = pulseIn(PIN_ULTRA_ECHO, HIGH, 20000);
-
-  if (duracionPulso == 0) {
-    return -1;  // no hubo eco: no hay nada detectado
-  }
-
-  return duracionPulso / 58;  // formula estandar del HC-SR04, resultado en cm
-}
-
-// ===================== BOTON DE EMERGENCIA =====================
-
-bool botonEmergenciaPresionado() {
-  return digitalRead(PIN_BOTON_EMERGENCIA) == LOW;
-}
-
-// ===================== CONTROL DE MOTORES (DRV8833) =====================
-//
-// Cada motor se maneja con dos pines "A" y "B". Para el driver DRV8833:
-//   - Adelante:     A = PWM (velocidad), B = LOW
-//   - Atras:        A = LOW, B = PWM (velocidad)
-//   - Punto muerto: A = LOW, B = LOW (sin corriente, la rueda gira libre)
-//
-// velocidad va de -255 a 255: positivo = adelante, negativo = atras,
-// 0 = detenido.
-
-void motorIzquierdo(int velocidad) {
-  aplicarVelocidadMotor(PIN_MOTOR_IZQ_A, PIN_MOTOR_IZQ_B, velocidad);
-}
-
-void motorDerecho(int velocidad) {
-  aplicarVelocidadMotor(PIN_MOTOR_DER_A, PIN_MOTOR_DER_B, velocidad);
-}
-
-void aplicarVelocidadMotor(int pinA, int pinB, int velocidad) {
-  if (velocidad > 0) {
-    analogWrite(pinA, velocidad);
-    digitalWrite(pinB, LOW);
-  } else if (velocidad < 0) {
-    digitalWrite(pinA, LOW);
-    analogWrite(pinB, -velocidad);
-  } else {
-    digitalWrite(pinA, LOW);
-    digitalWrite(pinB, LOW);
-  }
-}
-
-void detenerMotores() {
-  motorIzquierdo(0);
-  motorDerecho(0);
-}
-
-// ===================== UTILIDAD: LED PARPADEANTE =====================
-
-void parpadearLed(int pin) {
-  static unsigned long ultimoCambio = 0;
-  static bool encendido = false;
-
-  if (millis() - ultimoCambio < 200) {
-    return;
-  }
-  ultimoCambio = millis();
-
-  encendido = !encendido;
-  digitalWrite(pin, encendido ? HIGH : LOW);
 }

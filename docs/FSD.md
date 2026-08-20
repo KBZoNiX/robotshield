@@ -13,7 +13,7 @@ Escribir **dos sketches independientes**, uno por categoría de robot, que los a
 - `src/MiniSumo/MiniSumo.ino` — autónomo, con máquina de estados.
 
 Ambos:
-- Un único archivo `.ino`, sin librerías externas ni archivos `.h` propios (solo `Arduino.h` implícito). Nada de `SoftwareSerial` (ver nota UART).
+- Varios archivos `.ino` dentro de la carpeta de cada sketch (ver §6), sin librerías externas ni archivos `.h` propios (solo `Arduino.h` implícito). El Arduino IDE/CLI junta automáticamente todos los `.ino` de una misma carpeta en un solo programa al compilar — no hace falta `#include` entre ellos — así que esto sigue siendo, a efectos de compilación, "un solo programa por sketch"; la división en varios archivos es puramente para que cada pestaña sea más corta y legible. Nada de `SoftwareSerial` (ver nota UART).
 - Comentarios y mensajes por `Serial` en **español**; nombres de `#define`/funciones en **inglés/convención Arduino estándar** donde corresponda (`pinMode`, `analogWrite`, etc.) pero identificadores propios (variables, funciones) en **español**, que es como se va a explicar en clase.
 - Organizados en bloques con comentarios tipo encabezado (`// ===== SECCIÓN =====`) para que se puedan ubicar a simple vista.
 - Constantes de calibración agrupadas arriba del todo, con comentario de qué significan y cómo ajustarlas en la práctica.
@@ -162,7 +162,8 @@ const int VELOCIDAD_ATAQUE     = ...; // PWM al embestir
 const int VELOCIDAD_EVASION    = ...; // PWM al retroceder/girar en evasión
 const int DISTANCIA_DETECCION_CM = 30; // rango del ultrasonido para considerar "rival visible"
 const int UMBRAL_BORDE         = ...; // AJUSTAR EN CANCHA — ver 4.3
-const unsigned long DURACION_EVASION_MS = ...; // duración de la maniobra de escape
+const unsigned long DURACION_RETROCESO_EVASION_MS = ...; // duración del retroceso al evadir
+const unsigned long DURACION_GIRO_EVASION_MS = ...; // duración del giro al evadir
 const bool MODO_DEBUG_SENSORES = false; // true = imprime lecturas de borde por Serial
 ```
 
@@ -189,12 +190,19 @@ robotshield/
 │   └── ...                         (ya existente)
 └── src/
     ├── Futbol/
-    │   └── Futbol.ino
+    │   ├── Futbol.ino               (setup/loop, dispatch, pines)
+    │   ├── Bluetooth.ino            (lectura/traducción de comandos del HC-05)
+    │   ├── Motores.ino              (control de motores, driver DRV8833)
+    │   └── Extras.ino               (botón de bocina, botón de turbo)
     └── MiniSumo/
-        └── MiniSumo.ino
+        ├── MiniSumo.ino             (setup/loop, pines, enum Estado)
+        ├── MaquinaDeEstado.ino      (manejadores de cada estado)
+        ├── Motores.ino              (control de motores, driver DRV8833 — igual al de Fútbol)
+        ├── Sensores.ino             (lectura cruda: borde, ultrasónico, botón de emergencia)
+        └── Extras.ino               (LED parpadeante)
 ```
 
-(Cada sketch va en su propia carpeta porque el Arduino IDE exige que el nombre del archivo `.ino` coincida con el de la carpeta que lo contiene.)
+(Cada sketch va en su propia carpeta porque el Arduino IDE exige que el nombre del archivo `.ino` principal coincida con el de la carpeta que lo contiene. Los demás archivos `.ino` de esa misma carpeta se incluyen automáticamente sin importar su nombre — es lo que permite dividir cada sketch en varias pestañas temáticas sin usar `#include` ni archivos `.h`.)
 
 ---
 
