@@ -15,7 +15,8 @@ robotshield/
 ├── hardware/                              → esquemático, PCB y BOM (KiCad)
 └── src/
     ├── Futbol/Futbol.ino                  → programa del robot de Fútbol
-    └── MiniSumo/MiniSumo.ino              → programa del robot de Mini Sumo
+    ├── MiniSumo/MiniSumo.ino              → programa del robot de Mini Sumo
+    └── TestPlaca/TestPlaca.ino            → test de la placa antes del armado final
 ```
 
 Si algo de este README no alcanza para entender una decisión de diseño (por qué un pin es tal cosa, por qué el robot se comporta así), la explicación completa está en **`docs/FSD.md`**.
@@ -115,7 +116,37 @@ Más detalle de la máquina de estados (búsqueda, ataque, evasión) en `docs/FS
 
 ---
 
-## 5. Problemas comunes
+## 5. Test de placa (antes del armado final)
+
+Antes de armar el robot definitivo, conviene probar que el Robotshield ya soldado/cableado funciona: LEDs, pulsadores, sensor ultrasónico, motores y módulo Bluetooth. Para eso está `src/TestPlaca/TestPlaca.ino`, que prueba todo eso en un solo programa corto, sin depender de la lógica de Fútbol ni de Mini Sumo.
+
+### 5.1 Subir el sketch
+
+1. Si el HC-05 está conectado, **desconectarlo** — comparte los pines D0/D1 con el Monitor Serie, y si queda enchufado la carga por USB puede fallar (mismo motivo que en el robot de Fútbol).
+2. Abrir `src/TestPlaca/TestPlaca.ino` con el Arduino IDE y subirlo.
+3. Abrir el **Monitor Serie** a **9600 baudios**.
+
+### 5.2 Qué esperar
+
+Al arrancar, el programa corre solo, una sola vez, narrando cada paso por el Monitor Serie:
+
+1. **LEDs** — se prenden en secuencia (D4, D7, D13). Verificar que los tres enciendan.
+2. **Pulsadores** — pide apretar el botón D2 y después el D12 (10 segundos de margen cada uno). Si no detecta el apriete a tiempo, avisa "no se detectó, revisar cableado".
+3. **Sensor ultrasónico** — hace 5 mediciones de distancia y las imprime en cm. Si dice "sin eco", revisar que el HC-SR04 esté bien conectado.
+4. **Motores** — cada motor gira adelante y atrás brevemente. Confirmar visualmente que los dos giran en el sentido esperado.
+
+Para repetir estos cuatro tests, alcanza con resetear la placa (botón reset del Arduino).
+
+### 5.3 Test de Bluetooth
+
+Al terminar la secuencia automática, el programa queda esperando caracteres por Serial indefinidamente (no hace falta resetear para esto):
+
+- **Sin HC-05 a mano todavía:** escribir cualquier cosa en el Monitor Serie y enviarla — el Arduino la devuelve (eco), prende un LED y hace un beep. Sirve como prueba rápida aunque no tengan el módulo Bluetooth conectado.
+- **Con el HC-05:** volver a conectarlo al Robotshield, emparejarlo desde el celular con una app de terminal Bluetooth, y mandar caracteres desde ahí — deberían aparecer de vuelta en la app (eco) junto con el LED y el beep.
+
+---
+
+## 6. Problemas comunes
 
 | Problema | Posible causa |
 |---|---|
