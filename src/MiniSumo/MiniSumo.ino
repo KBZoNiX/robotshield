@@ -86,6 +86,11 @@ const int DISTANCIA_DETECCION_CM = 30;  // rango del ultrasonido para "rival vis
 const int UMBRAL_BORDE = 500;
 const bool MODO_DEBUG_SENSORES = false;
 
+// Poner en false para probar sin los sensores de borde conectados (si
+// quedan flotantes pueden disparar EVASION en falso). Volver a true antes
+// de conectar los sensores reales o de competir.
+#define CHEQUEAR_BORDE true
+
 const unsigned long DURACION_RETROCESO_EVASION_MS = 300;
 const unsigned long DURACION_GIRO_EVASION_MS = 300;
 const unsigned long DURACION_BIP_CUENTA_REGRESIVA_MS = 1000;
@@ -157,7 +162,7 @@ void loop() {
     case ATAQUE:
       // En BUSQUEDA y ATAQUE, lo primero es siempre chequear el borde:
       // no salirse del ring es mas importante que buscar o atacar.
-      if (hayBordeDetectado()) {
+      if (CHEQUEAR_BORDE && hayBordeDetectado()) {
         manejarEvasion();
       } else if (estadoActual == BUSQUEDA) {
         manejarBusqueda();
