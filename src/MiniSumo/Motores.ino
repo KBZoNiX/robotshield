@@ -21,6 +21,16 @@ void motorDerecho(int velocidad) {
 }
 
 void aplicarVelocidadMotor(int pinA, int pinB, int velocidad) {
+  if (DEBUG_MOTORES) {
+    Serial.print(millis());
+    Serial.print(" pinA=");
+    Serial.print(pinA);
+    Serial.print(" pinB=");
+    Serial.print(pinB);
+    Serial.print(" velocidad=");
+    Serial.println(velocidad);
+  }
+
   if (velocidad > 0) {
     analogWrite(pinA, velocidad);
     digitalWrite(pinB, LOW);

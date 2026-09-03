@@ -64,11 +64,35 @@ void girarBuscando() {
 void manejarAtaque() {
   digitalWrite(PIN_LED_BUSQUEDA, HIGH);
 
-  if (hayRivalDetectado()) {
+  // El sensor ultrasonico a veces da una lectura suelta sin eco (falso
+  // "no hay nadie"), aunque el rival siga ahi. Si volvieramos a BUSQUEDA
+  // apenas pasa eso, el ataque nunca llega a durar lo suficiente como
+  // para que el motor invierta de verdad. Por eso toleramos unas pocas
+  // lecturas fallidas seguidas antes de dar por perdido al rival.
+  static int perdidasSeguidas = 0;
+  const int PERDIDAS_PARA_VOLVER_A_BUSCAR = 3;
+
+  bool rival = hayRivalDetectado();
+
+  if (DEBUG_MOTORES) {
+    Serial.print("ATAQUE rival=");
+    Serial.print(rival);
+    Serial.print(" perdidasSeguidas=");
+    Serial.println(perdidasSeguidas);
+  }
+
+  if (rival) {
+    perdidasSeguidas = 0;
+  } else {
+    perdidasSeguidas++;
+  }
+
+  if (perdidasSeguidas >= PERDIDAS_PARA_VOLVER_A_BUSCAR) {
+    perdidasSeguidas = 0;
+    estadoActual = BUSQUEDA;
+  } else {
     motorIzquierdo(VELOCIDAD_ATAQUE);
     motorDerecho(VELOCIDAD_ATAQUE);
-  } else {
-    estadoActual = BUSQUEDA;
   }
 }
 

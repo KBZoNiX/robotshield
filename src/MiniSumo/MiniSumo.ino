@@ -72,11 +72,11 @@
 
 // ===================== CONSTANTES DE CALIBRACION =====================
 
-const int VELOCIDAD_BUSQUEDA = 130;  // PWM al girar buscando al rival
+const int VELOCIDAD_BUSQUEDA = 100;  // PWM al girar buscando al rival
 const int VELOCIDAD_ATAQUE   = 255;  // PWM al embestir
 const int VELOCIDAD_EVASION  = 180;  // PWM al retroceder/girar escapando del borde
 
-const int DISTANCIA_DETECCION_CM = 30;  // rango del ultrasonido para "rival visible"
+const int DISTANCIA_DETECCION_CM = 40;  // rango del ultrasonido para "rival visible"
 
 // AJUSTAR EN CANCHA: valor de analogRead() a partir del cual se
 // considera que un sensor de borde "ve" la linea blanca. Poner
@@ -89,7 +89,13 @@ const bool MODO_DEBUG_SENSORES = false;
 // Poner en false para probar sin los sensores de borde conectados (si
 // quedan flotantes pueden disparar EVASION en falso). Volver a true antes
 // de conectar los sensores reales o de competir.
-#define CHEQUEAR_BORDE true
+#define CHEQUEAR_BORDE false
+
+// Imprime por Serial cada comando de velocidad que se le manda a un motor
+// (ver aplicarVelocidadMotor() en Motores.ino) y el resultado de cada
+// chequeo de rival en ATAQUE. Util para depurar el sensor ultrasonico o
+// el driver de motores; dejar en false para uso normal.
+const bool DEBUG_MOTORES = false;
 
 const unsigned long DURACION_RETROCESO_EVASION_MS = 300;
 const unsigned long DURACION_GIRO_EVASION_MS = 300;
@@ -130,7 +136,7 @@ void setup() {
 
   // Los sensores de borde se leen con analogRead(), no hace falta pinMode.
 
-  if (MODO_DEBUG_SENSORES) {
+  if (MODO_DEBUG_SENSORES || DEBUG_MOTORES) {
     Serial.begin(9600);
   }
 
