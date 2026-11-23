@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Programación del robot — Robotshield V2.1</title>
+<style>
+  :root{
+    --bg:#ffffff; --text:#1d2330; --muted:#5b6475; --line:#d9dee7;
+    --primary:#0b5cad; --primary-soft:#e6f0fa;
+    --futbol:#1f8a4c; --futbol-soft:#e5f4ec;
+    --sumo:#c0392b; --sumo-soft:#fbe9e7;
+    --warn:#b36b00; --warn-soft:#fff3dc;
+    --code-bg:#f4f6f9; --kw:#8e24aa; --cm:#6a7a8c; --num:#b35900; --str:#1f8a4c; --pp:#0b5cad;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 "Segoe UI",Roboto,Ubuntu,Arial,sans-serif}
+  main{max-width:880px;margin:0 auto;padding:32px 16px 64px}
+  h1{font-size:2.1rem;margin:.2em 0;color:var(--primary);line-height:1.2}
+  h2{font-size:1.5rem;margin:2.2em 0 .6em;padding-bottom:.25em;border-bottom:3px solid var(--primary);color:var(--primary);page-break-after:avoid}
+  h2.futbol{color:var(--futbol);border-color:var(--futbol)}
+  h2.sumo{color:var(--sumo);border-color:var(--sumo)}
+  h3{font-size:1.15rem;margin:1.6em 0 .4em;page-break-after:avoid}
+  p{margin:.5em 0}
+  .portada{border:2px solid var(--primary);border-radius:12px;padding:28px;background:var(--primary-soft)}
+  .portada .sub{color:var(--muted);font-size:1.05rem}
+  .tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .tag{padding:4px 12px;border-radius:99px;font-weight:600;font-size:.9rem;color:#fff}
+  .t-test{background:var(--primary)} .t-fut{background:var(--futbol)} .t-sumo{background:var(--sumo)}
+  table{border-collapse:collapse;width:100%;margin:.8em 0;font-size:.93rem;page-break-inside:avoid}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  th{background:var(--primary-soft)}
+  td code,p code,li code{background:var(--code-bg);padding:1px 5px;border-radius:4px;font-size:.9em}
+  pre{background:var(--code-bg);border-left:4px solid var(--primary);border-radius:6px;padding:12px 14px;overflow-x:auto;font:13.5px/1.45 "Ubuntu Mono",Consolas,monospace;page-break-inside:avoid;white-space:pre}
+  pre.futbol{border-color:var(--futbol)} pre.sumo{border-color:var(--sumo)}
+  .kw{color:var(--kw);font-weight:600}.cm{color:var(--cm);font-style:italic}.num{color:var(--num)}.str{color:var(--str)}.pp{color:var(--pp);font-weight:600}
+  .add{background:#d9f2e2;display:inline-block;width:100%}
+  .box{border-radius:8px;padding:12px 16px;margin:1em 0;page-break-inside:avoid}
+  .box b.t{display:block;margin-bottom:4px}
+  .warn{background:var(--warn-soft);border-left:5px solid var(--warn)}
+  .info{background:var(--primary-soft);border-left:5px solid var(--primary)}
+  .ok{background:var(--futbol-soft);border-left:5px solid var(--futbol)}
+  .danger{background:var(--sumo-soft);border-left:5px solid var(--sumo)}
+  .fig{margin:1em 0;text-align:center;page-break-inside:avoid}
+  .fig svg{max-width:100%;height:auto}
+  .fig figcaption{color:var(--muted);font-size:.88rem;margin-top:4px}
+  ol.pasos>li{margin:.45em 0}
+  .check li{list-style:none;margin:.3em 0}
+  .check li::before{content:"☐ ";font-size:1.1em}
+  .toc{columns:2;column-gap:32px;font-size:.95rem}
+  .toc a{color:var(--text);text-decoration:none}
+  .toc a:hover{color:var(--primary)}
+  @media (max-width:600px){.toc{columns:1} h1{font-size:1.6rem}}
+  @media print{
+    body{font-size:11.5pt} main{max-width:none;padding:0}
+    h2{page-break-before:always} h2.nobreak{page-break-before:avoid}
+    a{color:inherit;text-decoration:none}
+  }
+</style>
+</head>
+<body>
+<main>
+
+<section class="portada">
+  <div class="sub">ESETP N° 703 — 5° año Electrónica — Liga Nacional de Robótica</div>
+  <h1>Programación del robot<br>Robotshield V2.1</h1>
+  <p class="sub">Tutorial para leer, entender y modificar los tres programas de la placa.</p>
+  <div class="tags"><span class="tag t-test">TestPlaca</span><span class="tag t-fut">Fútbol</span><span class="tag t-sumo">Mini Sumo</span></div>
+</section>
+
+<p style="margin-top:1.2em">Ya tienen el robot armado. Ahora hay que darle instrucciones. Los tres programas usan <b>la misma placa y los mismos pines</b>. Lo que cambia es qué hace cada programa con ellos:</p>
+<table>
+  <tr><th>Programa</th><th>Cuándo se usa</th><th>Qué hace</th></tr>
+  <tr><td><b>TestPlaca</b></td><td>Primero, siempre, apenas termina el armado</td><td>Prueba LEDs, pulsadores, sensor ultrasónico, motores y Bluetooth, uno por uno.</td></tr>
+  <tr><td><b>Fútbol</b></td><td>Robot de categoría Fútbol</td><td>Robot a control remoto: recibe comandos del celular por Bluetooth.</td></tr>
+  <tr><td><b>Mini Sumo</b></td><td>Robot de categoría Mini Sumo</td><td>Robot autónomo: busca al rival, lo empuja y evita salirse del ring.</td></tr>
+</table>
+<p>No hace falta entender cada línea de cada archivo. El objetivo es que puedan <b>leer el archivo principal</b>, saber <b>qué hace cada función</b> de los demás archivos y hacer <b>cambios simples</b> sin romper nada.</p>
+
+<h3>Contenido</h3>
+<ol class="toc">
+  <li><a href="#s1">Antes de empezar</a></li>
+  <li><a href="#s2">El mapa de pines</a></li>
+  <li><a href="#s3">Cómo está armado un programa</a></li>
+  <li><a href="#s4">TestPlaca (repaso rápido)</a></li>
+  <li><a href="#s5">Funciones comunes a Fútbol y Mini Sumo</a></li>
+  <li><a href="#s6">Programa Fútbol</a></li>
+  <li><a href="#s7">Programa Mini Sumo</a></li>
+  <li><a href="#s8">Problemas frecuentes</a></li>
+  <li><a href="#s9">Para pensar</a></li>
+</ol>
+
+<!-- ================================================================= -->
+<h2 id="s1">1. Antes de empezar</h2>
+
+<h3>1.1 Preparar el Arduino IDE</h3>
+<ol class="pasos">
+  <li>Abrir el Arduino IDE.</li>
+  <li>En <b>Herramientas → Placa</b>, elegir <b>Arduino Uno</b>.</li>
+  <li>Conectar el Arduino por USB y elegir el puerto en <b>Herramientas → Puerto</b> (en Ubuntu suele ser <code>/dev/ttyACM0</code> o <code>/dev/ttyUSB0</code>).</li>
+  <li>Abrir el archivo principal del programa: <code>TestPlaca.ino</code>, <code>Futbol.ino</code> o <code>MiniSumo.ino</code>. El IDE abre automáticamente las demás pestañas de esa carpeta.</li>
+  <li>Presionar <b>Verificar</b> (✔) para compilar y <b>Subir</b> (→) para cargar el programa.</li>
+</ol>
+
+<div class="box warn"><b class="t">⚠ Desconectar el HC-05 antes de subir un programa</b>
+El módulo Bluetooth HC-05 está conectado a los pines <b>D0 y D1</b>. Son los mismos pines que usa el cable USB para cargar el programa. Si el HC-05 está enchufado en J4, <b>la carga falla</b>. Primero se desconecta el HC-05, después se sube el programa y al final se vuelve a conectar.</div>
+
+<div class="box warn"><b class="t">⚠ Motores y USB</b>
+Con el robot sobre la mesa y el programa corriendo, las ruedas pueden girar de golpe. Para probar, poner el robot <b>con las ruedas en el aire</b> (apoyado sobre un soporte o una caja).</div>
+
+<h3>1.2 Las pestañas</h3>
+<p>Fútbol y Mini Sumo están divididos en varios archivos <code>.ino</code>, que en el IDE aparecen como <b>pestañas</b>. Es solo para ordenar: al compilar, el IDE <b>junta todas las pestañas en un único programa</b>. Primero pone el archivo principal (el que tiene el mismo nombre que la carpeta) y después las demás en orden alfabético.</p>
+<p>Dos reglas que salen de esto:</p>
+<ul>
+  <li>Una <b>función</b> se puede usar desde cualquier pestaña, sin importar en cuál esté escrita.</li>
+  <li>Los <b><code>#define</code>, constantes y variables globales</b> van en el archivo principal. Así existen antes de que las otras pestañas los usen.</li>
+</ul>
+
+<!-- ================================================================= -->
+<h2 id="s2">2. El mapa de pines</h2>
+<p>La placa es la misma para los tres programas. Esta tabla muestra qué conectó el diseño en cada pin y qué nombre le da cada programa.</p>
+<table>
+  <tr><th>Pin</th><th>Qué hay conectado</th><th>TestPlaca</th><th>Fútbol</th><th>Mini Sumo</th></tr>
+  <tr><td>D0 / D1</td><td>HC-05 (J4)</td><td>Serial (eco)</td><td>Serial (comandos)</td><td>— (solo depuración)</td></tr>
+  <tr><td>D2</td><td>Pulsador SW2</td><td><code>PIN_BOTON_1</code></td><td><code>PIN_BOTON_BOCINA</code></td><td><code>PIN_BOTON_ARMAR</code></td></tr>
+  <tr><td>D12</td><td>Pulsador SW3</td><td><code>PIN_BOTON_2</code></td><td><code>PIN_BOTON_TURBO</code></td><td><code>PIN_BOTON_EMERGENCIA</code></td></tr>
+  <tr><td>D4</td><td>LED 1</td><td><code>PIN_LED_1</code></td><td><code>PIN_LED_ENCENDIDO</code></td><td><code>PIN_LED_ARMADO</code></td></tr>
+  <tr><td>D7</td><td>LED 2</td><td><code>PIN_LED_2</code></td><td><code>PIN_LED_ACTIVIDAD</code></td><td><code>PIN_LED_BUSQUEDA</code></td></tr>
+  <tr><td>D13</td><td>LED 3</td><td><code>PIN_LED_3</code></td><td><code>PIN_LED_TURBO</code></td><td><code>PIN_LED_EVASION</code></td></tr>
+  <tr><td>D8</td><td>Buzzer BZ1</td><td colspan="3"><code>PIN_BUZZER</code> (en los tres)</td></tr>
+  <tr><td>D9 / D10</td><td>DRV8833 → Motor 1 (J7)</td><td><code>PIN_MOTOR_1A/1B</code></td><td colspan="2"><code>PIN_MOTOR_IZQ_A/B</code></td></tr>
+  <tr><td>D3 / D11</td><td>DRV8833 → Motor 2 (J8)</td><td><code>PIN_MOTOR_2A/2B</code></td><td colspan="2"><code>PIN_MOTOR_DER_A/B</code></td></tr>
+  <tr><td>D6 / D5</td><td>HC-SR04 Trigger / Echo (J2)</td><td><code>PIN_ULTRA_TRIGGER/ECHO</code></td><td>—</td><td><code>PIN_ULTRA_TRIGGER/ECHO</code></td></tr>
+  <tr><td>A1 / A2 / A3</td><td>Sensores de borde IR (J9 / J10 / J11)</td><td>—</td><td>—</td><td><code>SENSOR_BORDE_IZQUIERDO / DERECHO / FRONTAL</code></td></tr>
+</table>
+<div class="box info"><b class="t">Idea clave</b>
+Un <code>#define</code> es solo un <b>apodo</b> para un número de pin. <code>PIN_BOTON_BOCINA</code> y <code>PIN_BOTON_ARMAR</code> son el mismo pin D2 con distinto nombre. El nombre dice <b>para qué se usa</b> en ese programa.</div>
+<p class="sub" style="color:var(--muted);font-size:.88rem">Fuente: <code>ROBOTSHIELD_V2.1_CONTEXTO_TECNICO.md</code> §2 y §3, generado a partir del esquemático KiCad Rev 2.1 y de <code>BOM.csv</code>.</p>
+
+<!-- ================================================================= -->
+<h2 id="s3">3. Cómo está armado un programa</h2>
+<p>Los tres archivos principales siguen el mismo orden. Una vez que se reconoce en uno, se reconoce en los otros.</p>
+<div class="fig">
+<svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial" font-size="14">
+  <rect x="10" y="10" width="740" height="44" rx="8" fill="#e6f0fa" stroke="#0b5cad"/>
+  <text x="24" y="38" font-weight="700" fill="#0b5cad">1. #define</text><text x="190" y="38" fill="#1d2330">Apodos de los pines: "el LED de turbo está en el pin 13"</text>
+  <rect x="10" y="62" width="740" height="44" rx="8" fill="#fff3dc" stroke="#b36b00"/>
+  <text x="24" y="90" font-weight="700" fill="#b36b00">2. const / variables</text><text x="190" y="90" fill="#1d2330">Valores a ajustar (velocidades, tiempos) y memoria del programa</text>
+  <rect x="10" y="114" width="740" height="44" rx="8" fill="#e5f4ec" stroke="#1f8a4c"/>
+  <text x="24" y="142" font-weight="700" fill="#1f8a4c">3. setup()</text><text x="190" y="142" fill="#1d2330">Corre UNA vez al encender: configura pines y estado inicial</text>
+  <rect x="10" y="166" width="740" height="74" rx="8" fill="#fbe9e7" stroke="#c0392b"/>
+  <text x="24" y="194" font-weight="700" fill="#c0392b">4. loop()</text><text x="190" y="194" fill="#1d2330">Se repite SIN PARAR, miles de veces por segundo.</text>
+  <text x="190" y="220" fill="#1d2330">Llama a funciones de las otras pestañas.</text>
+  <path d="M720 232 C 760 232, 760 176, 720 176" fill="none" stroke="#c0392b" stroke-width="2" marker-end="url(#a)"/>
+  <defs><marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#c0392b"/></marker></defs>
+</svg>
+<figcaption>Figura 1 — Las cuatro partes del archivo principal.</figcaption>
+</div>
+<p><b>Regla práctica para modificar:</b> la mayoría de los cambios se hacen en la parte 2, cambiando un número. Cambiar la lógica del <code>loop()</code> ya es un cambio grande.</p>
+
+<!-- ================================================================= -->
+<h2 id="s4">4. TestPlaca (repaso rápido)</h2>
+<p>Se sube <b>antes</b> de cargar Fútbol o Mini Sumo. Si algo falla acá, el problema es de <b>armado o soldadura</b>, no de programación. Es un único archivo, sin pestañas.</p>
+
+<h3>4.1 Uso</h3>
+<ol class="pasos">
+  <li>Desconectar el HC-05 y subir <code>TestPlaca.ino</code>.</li>
+  <li>Abrir el <b>Monitor Serie</b> a <b>9600 baudios</b>. El programa va contando qué prueba en cada momento.</li>
+  <li>Seguir las instrucciones: cuando lo pida, presionar cada pulsador (hay 10 s de margen).</li>
+  <li>Para repetir todo, presionar <b>RESET</b> en el Arduino.</li>
+</ol>
+
+<h3>4.2 Secuencia de pruebas</h3>
+<table>
+  <tr><th>#</th><th>Prueba</th><th>Qué debería pasar</th><th>Si falla, revisar</th></tr>
+  <tr><td>0</td><td>Arranque</td><td>Un bip y el título en el Monitor Serie</td><td>Baudios en 9600, puerto correcto</td></tr>
+  <tr><td>1</td><td>LEDs</td><td>Se encienden de a uno: D4, D7, D13</td><td>Polaridad del LED, resistencia de 470 Ω, soldadura</td></tr>
+  <tr><td>2</td><td>Pulsadores</td><td>“Boton 1 (D2): OK” + bip, y lo mismo con el botón 2</td><td>“no se detecto” → soldadura del pulsador SW2/SW3</td></tr>
+  <tr><td>3</td><td>Ultrasónico</td><td>5 distancias en cm (poner la mano delante)</td><td>“Sin eco” → sensor en J2, orden de cables</td></tr>
+  <tr><td>4</td><td>Motores</td><td>Motor 1 adelante/atrás, después Motor 2 adelante/atrás</td><td>No gira → DRV8833 en J5/J6, cables en J7/J8, batería y SW1 encendido</td></tr>
+  <tr><td>5</td><td>Bluetooth (eco)</td><td>Cada carácter enviado vuelve igual, prende el LED 1 y hace bip</td><td>Ver 4.3</td></tr>
+</table>
+
+<h3>4.3 Prueba de Bluetooth</h3>
+<p>Al terminar las pruebas automáticas, el <code>loop()</code> queda esperando caracteres y los devuelve (eco):</p>
+<pre><code>void loop() {
+  if (Serial.available() > 0) {   // ¿llegó algo?
+    char c = Serial.read();       // leerlo
+    digitalWrite(PIN_LED_1, HIGH);
+    tone(PIN_BUZZER, 2000, 80);
+    Serial.write(c);              // devolverlo por el mismo canal
+    delay(100);
+    digitalWrite(PIN_LED_1, LOW);
+  }
+}</code></pre>
+<ul>
+  <li><b>Sin HC-05:</b> escribir en el Monitor Serie. Si vuelve la misma letra, el Arduino funciona.</li>
+  <li><b>Con HC-05:</b> reconectar el módulo en J4, emparejar el celular (clave de fábrica habitual: 1234 o 0000) y enviar letras desde una app de terminal Bluetooth.</li>
+</ul>
+<div class="box ok"><b class="t">✔ Placa aprobada</b>Si las 5 pruebas dan bien, pasar a la sección 5.</div>
+
+<!-- ================================================================= -->
+<h2 id="s5">5. Funciones comunes a Fútbol y Mini Sumo</h2>
+<p>Los dos programas comparten varias ideas. Se explican una sola vez acá.</p>
+
+<h3>5.1 Motores: <code>Motores.ino</code></h3>
+<p>Estas tres funciones son <b>idénticas</b> en Fútbol y en Mini Sumo:</p>
+<table>
+  <tr><th>Función</th><th>Qué hace</th></tr>
+  <tr><td><code>motorIzquierdo(velocidad)</code></td><td>Mueve el motor izquierdo.</td></tr>
+  <tr><td><code>motorDerecho(velocidad)</code></td><td>Mueve el motor derecho.</td></tr>
+  <tr><td><code>detenerMotores()</code></td><td>Pone los dos motores en 0.</td></tr>
+  <tr><td><code>aplicarVelocidadMotor(pinA, pinB, velocidad)</code></td><td>Hace el trabajo real con el DRV8833. Las dos anteriores la usan.</td></tr>
+</table>
+<p>La <b>velocidad</b> es un número de <b>−255 a 255</b>:</p>
+<div class="fig">
+<svg viewBox="0 0 760 120" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial" font-size="14">
+  <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#c0392b"/><stop offset=".5" stop-color="#d9dee7"/><stop offset="1" stop-color="#1f8a4c"/></linearGradient></defs>
+  <rect x="40" y="30" width="680" height="22" rx="11" fill="url(#g)"/>
+  <text x="40" y="80" fill="#c0392b" font-weight="700">−255</text><text x="40" y="100" fill="#5b6475">atrás a fondo</text>
+  <text x="380" y="80" text-anchor="middle" font-weight="700">0</text><text x="380" y="100" text-anchor="middle" fill="#5b6475">detenido</text>
+  <text x="720" y="80" text-anchor="end" fill="#1f8a4c" font-weight="700">+255</text><text x="720" y="100" text-anchor="end" fill="#5b6475">adelante a fondo</text>
+  <text x="560" y="22" text-anchor="middle" fill="#1d2330">+150 = adelante, velocidad media</text>
+</svg>
+<figcaption>Figura 2 — El signo indica el sentido de giro y el valor indica la velocidad (PWM).</figcaption>
+</div>
+<table>
+  <tr><th>Movimiento</th><th>Pin A</th><th>Pin B</th></tr>
+  <tr><td>Adelante</td><td>PWM (velocidad)</td><td>LOW</td></tr>
+  <tr><td>Atrás</td><td>LOW</td><td>PWM (velocidad)</td></tr>
+  <tr><td>Detenido (rueda libre)</td><td>LOW</td><td>LOW</td></tr>
+</table>
+<p><b>Para girar</b> se mueven las ruedas en sentido contrario: <code>motorIzquierdo(-150); motorDerecho(150);</code> gira en el lugar hacia la izquierda.</p>
+<div class="box info"><b class="t">Si el robot va para el lado equivocado</b>
+<ul style="margin:.2em 0">
+  <li><b>Una rueda gira al revés</b> → invertir los dos cables de ese motor en J7 o J8.</li>
+  <li><b>Dobla a la derecha cuando debería doblar a la izquierda</b> → intercambiar los números de <code>PIN_MOTOR_IZQ_*</code> y <code>PIN_MOTOR_DER_*</code> en el archivo principal.</li>
+</ul></div>
+<div class="box warn"><b class="t">⚠ Mantener las dos copias iguales</b>Si corrigen algo en <code>Motores.ino</code> de un programa, hagan el mismo cambio en el otro.</div>
+
+<h3>5.2 Pulsadores con <code>INPUT_PULLUP</code></h3>
+<p>Los pulsadores se configuran con <code>pinMode(pin, INPUT_PULLUP)</code>. Eso activa una resistencia interna que deja el pin en HIGH. Por eso la lógica queda <b>al revés de lo que uno espera</b>:</p>
+<table>
+  <tr><th>Pulsador</th><th><code>digitalRead()</code> devuelve</th></tr>
+  <tr><td>Suelto</td><td><code>HIGH</code></td></tr>
+  <tr><td>Presionado</td><td><code>LOW</code></td></tr>
+</table>
+
+<h3>5.3 Detectar el flanco (“un toque = una acción”)</h3>
+<p>El <code>loop()</code> se repite miles de veces por segundo. Si solo se preguntara “¿está presionado?”, un toque de medio segundo cambiaría el modo cientos de veces. La solución es recordar cómo estaba el botón en la vuelta anterior y actuar <b>solo en el instante en que pasa de suelto a presionado</b>:</p>
+<pre><code>bool estadoActual = digitalRead(PIN_BOTON_TURBO);
+if (estadoActual == LOW && estadoAnteriorBotonTurbo == HIGH) {
+  // recién se presionó: actuar UNA vez
+}
+estadoAnteriorBotonTurbo = estadoActual;   // recordar para la próxima vuelta</code></pre>
+<p>Se usa en <code>revisarBotonTurbo()</code> (Fútbol) y en <code>manejarEspera()</code> (Mini Sumo). El <code>delay(50)</code> que sigue es un <b>antirrebote</b>: los contactos del pulsador “rebotan” unos milisegundos al cerrarse.</p>
+
+<h3>5.4 Buzzer y LEDs</h3>
+<ul>
+  <li><code>tone(PIN_BUZZER, frecuencia, duración)</code>: por ejemplo, <code>tone(PIN_BUZZER, 2000, 200)</code> suena a 2000 Hz durante 200 ms <b>sin frenar el programa</b>.</li>
+  <li><code>digitalWrite(PIN_LED_x, HIGH / LOW)</code> enciende o apaga un LED. En los dos programas los LEDs muestran <b>qué está pensando el robot</b>. Sirven mucho para encontrar fallas.</li>
+</ul>
+
+<!-- ================================================================= -->
+<h2 id="s6" class="futbol">6. Programa Fútbol</h2>
+<p>Robot a control remoto. El celular envía <b>una letra</b> por Bluetooth, el HC-05 la pasa al Arduino por el puerto serie y el programa mueve los motores según esa letra.</p>
+<div class="fig">
+<svg viewBox="0 0 760 110" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial" font-size="14">
+  <defs><marker id="f" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1f8a4c"/></marker></defs>
+  <g fill="#e5f4ec" stroke="#1f8a4c" stroke-width="1.5">
+    <rect x="5" y="25" width="120" height="60" rx="8"/><rect x="165" y="25" width="120" height="60" rx="8"/>
+    <rect x="325" y="25" width="140" height="60" rx="8"/><rect x="505" y="25" width="110" height="60" rx="8"/><rect x="655" y="25" width="100" height="60" rx="8"/>
+  </g>
+  <g text-anchor="middle" fill="#1d2330">
+    <text x="65" y="52" font-weight="700">Celular</text><text x="65" y="72">app BT</text>
+    <text x="225" y="52" font-weight="700">HC-05</text><text x="225" y="72">J4 · D0/D1</text>
+    <text x="395" y="52" font-weight="700">revisarBluetooth()</text><text x="395" y="72">Bluetooth.ino</text>
+    <text x="560" y="52" font-weight="700">avanzar()…</text><text x="560" y="72">Motores.ino</text>
+    <text x="705" y="52" font-weight="700">DRV8833</text><text x="705" y="72">motores</text>
+  </g>
+  <g stroke="#1f8a4c" stroke-width="2" marker-end="url(#f)">
+    <line x1="125" y1="55" x2="160" y2="55"/><line x1="285" y1="55" x2="320" y2="55"/><line x1="465" y1="55" x2="500" y2="55"/><line x1="615" y1="55" x2="650" y2="55"/>
+  </g>
+  <text x="142" y="18" text-anchor="middle" fill="#1f8a4c" font-weight="700">'F'</text>
+</svg>
+<figcaption>Figura 3 — Recorrido de un comando, desde el celular hasta las ruedas.</figcaption>
+</div>
+
+<h3>6.1 Las pestañas</h3>
+<table>
+  <tr><th>Pestaña</th><th>Contenido</th></tr>
+  <tr><td><code>Futbol.ino</code></td><td><b>Principal:</b> pines, variables, <code>setup()</code> y <code>loop()</code></td></tr>
+  <tr><td><code>Bluetooth.ino</code></td><td>Lee la letra que llega y decide qué hacer</td></tr>
+  <tr><td><code>Motores.ino</code></td><td>Velocidades y movimientos (ver 5.1)</td></tr>
+  <tr><td><code>Extras.ino</code></td><td>Pulsadores de bocina y turbo, y el sonido de bocina</td></tr>
+</table>
+
+<h3>6.2 Archivo principal: <code>Futbol.ino</code></h3>
+<p><b>a) Los <code>#define</code></b></p>
+<pre class="futbol"><code>#define PIN_MOTOR_IZQ_A 9   // Motor 1A
+#define PIN_MOTOR_IZQ_B 10  // Motor 1B
+#define PIN_MOTOR_DER_A 3   // Motor 2A
+#define PIN_MOTOR_DER_B 11  // Motor 2B
+
+#define PIN_BOTON_BOCINA 2   // SW2 - bocina local
+#define PIN_BOTON_TURBO  12  // SW3 - alterna modo turbo
+
+#define PIN_LED_ENCENDIDO 4   // fijo mientras el programa corre
+#define PIN_LED_ACTIVIDAD 7   // parpadea al recibir un comando
+#define PIN_LED_TURBO     13  // fijo mientras el turbo esta activo
+
+#define PIN_BUZZER 8</code></pre>
+<p>Nombran cada pin según su uso. Coinciden con la tabla de la sección 2.</p>
+
+<p><b>b) Variables de estado</b></p>
+<pre class="futbol"><code>bool modoTurbo = false;
+bool estadoAnteriorBotonTurbo = HIGH;</code></pre>
+<p><code>modoTurbo</code> es la <b>memoria</b> del robot: indica si está en turbo o no. Se declara en el archivo principal porque la usan dos pestañas: <code>Extras.ino</code> la cambia y <code>Motores.ino</code> la lee para elegir la velocidad.</p>
+
+<p><b>c) <code>setup()</code></b></p>
+<pre class="futbol"><code>void setup() {
+  pinMode(PIN_MOTOR_IZQ_A, OUTPUT);   // ... los 4 pines de motor como salida
+  pinMode(PIN_BOTON_BOCINA, INPUT_PULLUP);
+  pinMode(PIN_BOTON_TURBO, INPUT_PULLUP);
+  pinMode(PIN_LED_ENCENDIDO, OUTPUT); // ... los 3 LEDs como salida
+  pinMode(PIN_BUZZER, OUTPUT);
+
+  Serial.begin(9600);            // velocidad de fabrica del HC-05
+
+  detenerMotores();              // arrancar quieto
+  digitalWrite(PIN_LED_ENCENDIDO, HIGH);
+  tone(PIN_BUZZER, 1500, 150);   // bip corto de "listo"
+}</code></pre>
+<p>Configura cada pin, abre la comunicación con el HC-05 a <b>9600 baudios</b> y deja el robot quieto, con el LED 1 encendido y un bip de “listo”.</p>
+
+<p><b>d) <code>loop()</code></b></p>
+<pre class="futbol"><code>void loop() {
+  revisarBotonBocina();
+  revisarBotonTurbo();
+  revisarBluetooth();
+}</code></pre>
+<p>Son solo tres llamadas, que se repiten sin parar. En cada vuelta el robot revisa los dos pulsadores y si llegó un comando. Todo el trabajo está en las funciones de las otras pestañas.</p>
+
+<h3>6.3 Qué hace cada función de las otras pestañas</h3>
+<table>
+  <tr><th>Pestaña</th><th>Función</th><th>Qué hace</th></tr>
+  <tr><td rowspan="1"><code>Bluetooth.ino</code></td><td><code>revisarBluetooth()</code></td><td>Si llegó una letra, la lee, prende el LED de actividad y con un <code>switch</code> llama al movimiento que corresponde.</td></tr>
+  <tr><td rowspan="6"><code>Motores.ino</code></td><td><code>velocidadActual()</code></td><td>Devuelve <code>VELOCIDAD_TURBO</code> (255) si <code>modoTurbo</code> está activo; si no, <code>VELOCIDAD_NORMAL</code> (150).</td></tr>
+  <tr><td><code>avanzar()</code></td><td>Las dos ruedas hacia adelante.</td></tr>
+  <tr><td><code>retroceder()</code></td><td>Las dos ruedas hacia atrás.</td></tr>
+  <tr><td><code>girarIzquierda()</code></td><td>Izquierda atrás y derecha adelante: gira en el lugar.</td></tr>
+  <tr><td><code>girarDerecha()</code></td><td>Izquierda adelante y derecha atrás.</td></tr>
+  <tr><td><code>detenerMotores()</code> y otras</td><td>Ver 5.1.</td></tr>
+  <tr><td rowspan="3"><code>Extras.ino</code></td><td><code>revisarBotonBocina()</code></td><td>Mientras SW2 está presionado, toca la bocina.</td></tr>
+  <tr><td><code>revisarBotonTurbo()</code></td><td>En cada toque de SW3 (flanco, ver 5.3) activa o desactiva el turbo y actualiza el LED de turbo.</td></tr>
+  <tr><td><code>tocarBocina()</code></td><td>Bip de 2000 Hz durante 200 ms.</td></tr>
+</table>
+
+<h3>6.4 Los comandos</h3>
+<table>
+  <tr><th>Letra</th><th>Acción</th><th>Rueda izq.</th><th>Rueda der.</th></tr>
+  <tr><td><b>F</b></td><td>Avanzar</td><td>+</td><td>+</td></tr>
+  <tr><td><b>B</b></td><td>Retroceder</td><td>−</td><td>−</td></tr>
+  <tr><td><b>L</b></td><td>Girar izquierda</td><td>−</td><td>+</td></tr>
+  <tr><td><b>R</b></td><td>Girar derecha</td><td>+</td><td>−</td></tr>
+  <tr><td><b>S</b></td><td>Detener</td><td>0</td><td>0</td></tr>
+  <tr><td><b>H</b></td><td>Bocina</td><td colspan="2">sin cambio</td></tr>
+</table>
+<div class="box warn"><b class="t">⚠ El robot no frena solo</b>
+Después de recibir <b>F</b>, el robot sigue avanzando hasta que llegue otra letra. La app del celular tiene que enviar <b>S</b> al soltar el botón. Hay que revisar eso en la configuración de la app.</div>
+<p>Así se ve la parte central de <code>revisarBluetooth()</code>:</p>
+<pre class="futbol"><code>char comando = Serial.read();
+
+switch (comando) {
+  case 'F':
+    avanzar();
+    break;
+  case 'B':
+    retroceder();
+    break;
+  // ... L, R, S, H
+  default:
+    // Caracter desconocido: se ignora.
+    break;
+}</code></pre>
+<p>El <code>switch</code> compara la letra con cada <code>case</code>. Cuando coincide, ejecuta hasta el <code>break</code>. Si no coincide con ninguna, va a <code>default</code> y no hace nada.</p>
+
+<h3>6.5 Modificaciones</h3>
+
+<p><b>Modificación 1 — Cambiar las velocidades</b> (<code>Motores.ino</code>)</p>
+<pre class="futbol"><code>const int VELOCIDAD_NORMAL = 150;  // PWM (0-255) en modo normal
+const int VELOCIDAD_TURBO  = 255;  // PWM (0-255) en modo turbo</code></pre>
+<p>Si el robot es difícil de controlar, bajar <code>VELOCIDAD_NORMAL</code> (por ejemplo, a 110). Por debajo de cierto valor los motores no llegan a arrancar: ese mínimo hay que encontrarlo probando.</p>
+
+<p><b>Modificación 2 — Agregar un comando nuevo</b> (<code>Bluetooth.ino</code>)</p>
+<p>Objetivo: que la letra <b>T</b> active o desactive el turbo desde el celular, igual que el pulsador SW3.</p>
+<ol class="pasos">
+  <li><b>Elegir una letra que no esté en uso.</b> F, B, L, R, S y H ya están ocupadas. Usamos <b>T</b>.</li>
+  <li><b>Agregar el <code>case</code></b> dentro del <code>switch</code> de <code>revisarBluetooth()</code>, antes de <code>default</code>:
+<pre class="futbol"><code>    case 'H':
+      tocarBocina();
+      break;
+<span class="add">    case 'T':
+      modoTurbo = !modoTurbo;                           // invertir: true↔false
+      digitalWrite(PIN_LED_TURBO, modoTurbo ? HIGH : LOW);
+      break;</span>
+    default:
+      break;</code></pre></li>
+  <li><b>Actualizar el comentario</b> de la lista de comandos al principio de <code>Futbol.ino</code>, para que el próximo que lea el código sepa que existe la T.</li>
+  <li><b>Verificar</b> (✔). Si compila, desconectar el HC-05, subir el programa y reconectarlo.</li>
+  <li><b>Probar:</b> enviar <b>T</b> desde la app. El LED de D13 tiene que encenderse y, con <b>F</b>, el robot tiene que ir más rápido.</li>
+  <li>En la app, <b>asignar la letra T</b> a un botón libre.</li>
+</ol>
+<div class="box info"><b class="t">Por qué funciona sin tocar nada más</b>
+<code>modoTurbo</code> está declarada en el archivo principal, así que se puede usar desde <code>Bluetooth.ino</code>. <code>avanzar()</code> ya pide <code>velocidadActual()</code>, que lee <code>modoTurbo</code>. El comando nuevo solo cambia esa variable y el resto del programa responde a ese cambio.</div>
+
+<p><b>Para practicar:</b> agregar un comando <b>X</b> que haga un “festejo”: tocar la bocina y girar a la derecha. <i>Pista:</i> se pueden llamar dos funciones dentro del mismo <code>case</code>.</p>
+
+<!-- ================================================================= -->
+<h2 id="s7" class="sumo">7. Programa Mini Sumo</h2>
+<p>Robot <b>autónomo</b>: nadie lo controla durante la lucha. Tiene que decidir solo qué hacer. Para eso se organiza como una <b>máquina de estados</b>: en cada momento el robot está en un único estado, y cada estado tiene su comportamiento y sus condiciones para pasar a otro.</p>
+
+<div class="fig">
+<svg viewBox="0 0 760 330" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial" font-size="14">
+  <defs>
+    <marker id="s" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#1d2330"/></marker>
+    <marker id="r" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#c0392b"/></marker>
+  </defs>
+  <g stroke-width="2">
+    <rect x="10" y="40" width="130" height="64" rx="32" fill="#eef0f4" stroke="#5b6475"/>
+    <rect x="200" y="40" width="170" height="64" rx="32" fill="#fff3dc" stroke="#b36b00"/>
+    <rect x="430" y="40" width="130" height="64" rx="32" fill="#e6f0fa" stroke="#0b5cad"/>
+    <rect x="620" y="40" width="130" height="64" rx="32" fill="#fbe9e7" stroke="#c0392b"/>
+    <rect x="515" y="220" width="160" height="64" rx="32" fill="#fbe9e7" stroke="#c0392b" stroke-dasharray="6 4"/>
+  </g>
+  <g text-anchor="middle" fill="#1d2330">
+    <text x="75" y="70" font-weight="700">ESPERA</text><text x="75" y="90" font-size="12">quieto</text>
+    <text x="285" y="70" font-weight="700">CUENTA_REGRESIVA</text><text x="285" y="90" font-size="12">5 bips, quieto</text>
+    <text x="495" y="70" font-weight="700">BUSQUEDA</text><text x="495" y="90" font-size="12">gira en el lugar</text>
+    <text x="685" y="70" font-weight="700">ATAQUE</text><text x="685" y="90" font-size="12">avanza a fondo</text>
+    <text x="595" y="250" font-weight="700">EVASION</text><text x="595" y="270" font-size="12">retrocede y gira</text>
+  </g>
+  <g stroke="#1d2330" stroke-width="2" fill="none" marker-end="url(#s)">
+    <line x1="140" y1="72" x2="195" y2="72"/>
+    <line x1="370" y1="72" x2="425" y2="72"/>
+    <path d="M560 60 L615 60"/>
+    <path d="M620 88 L565 88"/>
+    <path d="M470 104 L535 216"/>
+    <path d="M585 218 L545 110"/>
+    <path d="M690 104 C 720 170, 700 200, 672 225"/>
+  </g>
+  <g font-size="12" fill="#1d2330" text-anchor="middle">
+    <text x="168" y="62">SW2</text>
+    <text x="398" y="62">fin</text>
+    <text x="590" y="34">rival &lt; 40 cm</text>
+    <text x="592" y="104" >3 pérdidas</text>
+    <text x="475" y="170" fill="#c0392b">borde</text>
+    <text x="610" y="160">termina</text>
+    <text x="735" y="175" fill="#c0392b">borde</text>
+  </g>
+  <path d="M750 300 L 40 300 L 40 108" fill="none" stroke="#c0392b" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#r)"/>
+  <text x="400" y="322" text-anchor="middle" fill="#c0392b" font-weight="700" font-size="13">SW3 (emergencia): desde cualquier estado vuelve a ESPERA</text>
+</svg>
+<figcaption>Figura 4 — Máquina de estados del Mini Sumo.</figcaption>
+</div>
+
+<h3>7.1 Las pestañas</h3>
+<table>
+  <tr><th>Pestaña</th><th>Contenido</th></tr>
+  <tr><td><code>MiniSumo.ino</code></td><td><b>Principal:</b> pines, constantes de calibración, lista de estados, <code>setup()</code> y <code>loop()</code></td></tr>
+  <tr><td><code>MaquinaDeEstado.ino</code></td><td>Qué hace el robot en cada estado</td></tr>
+  <tr><td><code>Sensores.ino</code></td><td>Lectura de sensores de borde, ultrasónico y botón de emergencia</td></tr>
+  <tr><td><code>Motores.ino</code></td><td>Igual que en Fútbol (ver 5.1)</td></tr>
+  <tr><td><code>Extras.ino</code></td><td>LED parpadeante</td></tr>
+</table>
+
+<h3>7.2 Archivo principal: <code>MiniSumo.ino</code></h3>
+<p><b>a) Los <code>#define</code></b></p>
+<pre class="sumo"><code>#define PIN_BOTON_ARMAR       2   // SW2 - arma el robot
+#define PIN_BOTON_EMERGENCIA  12  // SW3 - parada de emergencia
+
+#define PIN_LED_ARMADO    4   // parpadea en cuenta regresiva, fijo si esta corriendo
+#define PIN_LED_BUSQUEDA  7   // parpadea buscando, fijo si encontro al rival
+#define PIN_LED_EVASION   13  // encendido durante la maniobra de evasion
+
+#define PIN_ULTRA_TRIGGER 6
+#define PIN_ULTRA_ECHO    5
+
+#define SENSOR_BORDE_IZQUIERDO A1
+#define SENSOR_BORDE_DERECHO   A2
+#define SENSOR_BORDE_FRONTAL   A3
+// (+ motores y buzzer, iguales que en Fútbol)</code></pre>
+<div class="box warn"><b class="t">⚠ Verificar los sensores de borde</b>
+Los nombres IZQUIERDO / DERECHO / FRONTAL suponen una ubicación típica. Cada grupo tiene que <b>comprobar en su robot</b> qué sensor está conectado a J9 (A1), J10 (A2) y J11 (A3), y corregir estos tres <code>#define</code> si hace falta. La forma de comprobarlo está en 7.5.</div>
+
+<p><b>b) Constantes de calibración</b>: los números que se ajustan en la cancha</p>
+<pre class="sumo"><code>const int VELOCIDAD_BUSQUEDA = 100;  // PWM al girar buscando al rival
+const int VELOCIDAD_ATAQUE   = 255;  // PWM al embestir
+const int VELOCIDAD_EVASION  = 180;  // PWM al escapar del borde
+
+const int DISTANCIA_DETECCION_CM = 40;  // rival "visible" a menos de 40 cm
+const int UMBRAL_BORDE = 500;           // lectura a partir de la cual hay linea blanca
+
+const bool MODO_DEBUG_SENSORES = false; // imprime los sensores de borde
+#define CHEQUEAR_BORDE false            // ⚠ true para competir
+const bool DEBUG_MOTORES = false;       // imprime lo que se manda a los motores
+
+const unsigned long DURACION_RETROCESO_EVASION_MS = 300;
+const unsigned long DURACION_GIRO_EVASION_MS = 300;
+const unsigned long DURACION_BIP_CUENTA_REGRESIVA_MS = 1000;
+const int CANTIDAD_BIPS_CUENTA_REGRESIVA = 5;</code></pre>
+
+<div class="box danger"><b class="t">🛑 CHEQUEAR_BORDE</b>
+En el código viene en <code>false</code>, para poder probar el robot <b>sin sensores de borde conectados</b>. Si quedan sin conectar, las entradas analógicas “flotan” y el robot entraría en EVASIÓN sin motivo. <b>Antes de competir tiene que estar en <code>true</code>.</b> Con <code>false</code>, el robot no ve el borde y se sale del ring.</div>
+
+<p><b>c) La lista de estados</b></p>
+<pre class="sumo"><code>enum Estado {
+  ESPERA,
+  CUENTA_REGRESIVA,
+  BUSQUEDA,
+  ATAQUE,
+  EVASION
+};
+
+Estado estadoActual = ESPERA;</code></pre>
+<p>Un <code>enum</code> es una lista de nombres posibles. <code>estadoActual</code> guarda <b>en qué estado está el robot ahora</b>. Siempre arranca en ESPERA.</p>
+
+<p><b>d) <code>setup()</code></b></p>
+<pre class="sumo"><code>void setup() {
+  // pinMode de motores, pulsadores (INPUT_PULLUP), LEDs, buzzer,
+  // TRIGGER (OUTPUT) y ECHO (INPUT)
+  // Los sensores de borde se leen con analogRead(): no llevan pinMode.
+
+  if (MODO_DEBUG_SENSORES || DEBUG_MOTORES) {
+    Serial.begin(9600);   // el Monitor Serie solo se abre si se depura
+  }
+
+  detenerMotores();
+  entrarEnEspera();
+}</code></pre>
+
+<p><b>e) <code>loop()</code></b>: acá se toman las decisiones</p>
+<pre class="sumo"><code>void loop() {
+  if (MODO_DEBUG_SENSORES) {
+    imprimirLecturasDeBorde();
+  }
+
+  // 1) Parada de emergencia: prioridad absoluta
+  if (botonEmergenciaPresionado()) {
+    entrarEnEspera();
+    return;                 // termina esta vuelta del loop acá
+  }
+
+  // 2) Según el estado actual...
+  switch (estadoActual) {
+    case ESPERA:
+      manejarEspera();
+      break;
+    case CUENTA_REGRESIVA:
+      manejarCuentaRegresiva();
+      break;
+    case BUSQUEDA:
+    case ATAQUE:
+      // 3) Primero el borde; recién después buscar o atacar
+      if (CHEQUEAR_BORDE && hayBordeDetectado()) {
+        manejarEvasion();
+      } else if (estadoActual == BUSQUEDA) {
+        manejarBusqueda();
+      } else {
+        manejarAtaque();
+      }
+      break;
+    default:
+      break;
+  }
+}</code></pre>
+<p>El <b>orden</b> de las preguntas marca la prioridad del robot:</p>
+<div class="fig">
+<svg viewBox="0 0 760 90" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial" font-size="15">
+  <defs><marker id="p" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#5b6475"/></marker></defs>
+  <rect x="5" y="15" width="220" height="60" rx="8" fill="#c0392b"/><text x="115" y="42" text-anchor="middle" fill="#fff" font-weight="700">1. ¿Emergencia?</text><text x="115" y="62" text-anchor="middle" fill="#fff" font-size="12">SW3 → ESPERA</text>
+  <rect x="270" y="15" width="220" height="60" rx="8" fill="#e67e22"/><text x="380" y="42" text-anchor="middle" fill="#fff" font-weight="700">2. ¿Borde?</text><text x="380" y="62" text-anchor="middle" fill="#fff" font-size="12">no salirse del ring</text>
+  <rect x="535" y="15" width="220" height="60" rx="8" fill="#0b5cad"/><text x="645" y="42" text-anchor="middle" fill="#fff" font-weight="700">3. Buscar / atacar</text><text x="645" y="62" text-anchor="middle" fill="#fff" font-size="12">recién si todo lo anterior está bien</text>
+  <g stroke="#5b6475" stroke-width="2" marker-end="url(#p)"><line x1="226" y1="45" x2="265" y2="45"/><line x1="491" y1="45" x2="530" y2="45"/></g>
+</svg>
+<figcaption>Figura 5 — Prioridades dentro del <code>loop()</code>. No cambiar este orden.</figcaption>
+</div>
+
+<h3>7.3 Qué hace cada función de las otras pestañas</h3>
+<table>
+  <tr><th>Pestaña</th><th>Función</th><th>Qué hace</th></tr>
+  <tr><td rowspan="5"><code>MaquinaDeEstado.ino</code></td><td><code>entrarEnEspera()</code> / <code>manejarEspera()</code></td><td>Detiene los motores y apaga los LEDs. Espera un toque de SW2 (flanco, ver 5.3) para pasar a CUENTA_REGRESIVA.</td></tr>
+  <tr><td><code>manejarCuentaRegresiva()</code></td><td>5 bips de 1 s con el LED 1 parpadeando, sin moverse. Después pasa a BÚSQUEDA.</td></tr>
+  <tr><td><code>manejarBusqueda()</code></td><td>Gira en el lugar (<code>girarBuscando()</code>) con el LED 2 parpadeando. Si ve al rival, pasa a ATAQUE.</td></tr>
+  <tr><td><code>manejarAtaque()</code></td><td>Avanza recto a <code>VELOCIDAD_ATAQUE</code>. Si pierde al rival <b>3 lecturas seguidas</b>, vuelve a BÚSQUEDA. Esa tolerancia existe porque el ultrasónico a veces falla una lectura suelta.</td></tr>
+  <tr><td><code>manejarEvasion()</code></td><td>Retrocede 300 ms y gira 300 ms hacia el lado contrario al borde detectado, con el LED 3 encendido. Después vuelve a BÚSQUEDA.</td></tr>
+  <tr><td rowspan="5"><code>Sensores.ino</code></td><td><code>lecturaBorde(pin)</code></td><td><code>analogRead()</code> del sensor: un número de 0 a 1023.</td></tr>
+  <tr><td><code>hayBordeDetectado()</code></td><td><code>true</code> si <b>alguno</b> de los tres sensores supera <code>UMBRAL_BORDE</code>.</td></tr>
+  <tr><td><code>medirDistanciaCM()</code></td><td>Dispara el HC-SR04 y devuelve la distancia en cm, o −1 si no hubo eco.</td></tr>
+  <tr><td><code>hayRivalDetectado()</code></td><td><code>true</code> si hay algo a menos de <code>DISTANCIA_DETECCION_CM</code>.</td></tr>
+  <tr><td><code>botonEmergenciaPresionado()</code> / <code>imprimirLecturasDeBorde()</code></td><td>Lee SW3. / Muestra los tres sensores en el Monitor Serie cada 500 ms.</td></tr>
+  <tr><td><code>Extras.ino</code></td><td><code>parpadearLed(pin)</code></td><td>Cambia el LED cada 200 ms usando <code>millis()</code>, <b>sin <code>delay()</code></b>: el robot sigue decidiendo mientras el LED parpadea.</td></tr>
+</table>
+
+<h3>7.4 Cómo mide el HC-SR04</h3>
+<pre class="sumo"><code>digitalWrite(PIN_ULTRA_TRIGGER, HIGH);
+delayMicroseconds(10);                 // pulso de 10 µs: "¡disparar!"
+digitalWrite(PIN_ULTRA_TRIGGER, LOW);
+
+unsigned long duracionPulso = pulseIn(PIN_ULTRA_ECHO, HIGH, 20000);
+return duracionPulso / 58;             // µs → cm</code></pre>
+<p>El sensor emite un sonido y mide cuánto tarda el eco en volver. El sonido recorre unos 343 m/s: ida y vuelta de 1 cm tardan aproximadamente 58 µs. Por eso se divide por 58. El <code>20000</code> es un tiempo máximo de espera de 20 ms: si no vuelve eco, <code>pulseIn</code> devuelve 0 y el programa no queda trabado.</p>
+
+<h3>7.5 Calibrar los sensores de borde</h3>
+<ol class="pasos">
+  <li>En <code>MiniSumo.ino</code>, poner <code>MODO_DEBUG_SENSORES = true</code> y subir el programa.</li>
+  <li>Abrir el Monitor Serie a 9600 baudios. Sin presionar SW2, el robot queda quieto en ESPERA.</li>
+  <li><b>Identificar cada sensor:</b> tapar o acercar a una superficie blanca <b>uno solo</b> por vez y ver qué valor cambia. Corregir los <code>#define</code> <code>SENSOR_BORDE_*</code> si no coinciden.</li>
+  <li>Apoyar el robot sobre el <b>negro</b> del ring y anotar los valores. Después sobre la <b>línea blanca</b> y anotar de nuevo:
+    <table style="max-width:520px">
+      <tr><th>Sensor</th><th>Sobre negro</th><th>Sobre blanco</th></tr>
+      <tr><td>Izquierdo (A1)</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+      <tr><td>Derecho (A2)</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+      <tr><td>Frontal (A3)</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+    </table></li>
+  <li>Elegir <code>UMBRAL_BORDE</code> <b>a mitad de camino</b> entre el mayor valor sobre negro y el menor valor sobre blanco. Por ejemplo, con negro ≈ 150 y blanco ≈ 850, el umbral queda en 500.</li>
+  <li>Volver <code>MODO_DEBUG_SENSORES</code> a <code>false</code> y poner <code>CHEQUEAR_BORDE</code> en <code>true</code>.</li>
+</ol>
+<div class="box info"><b class="t">Ojo con el sentido de la comparación</b>
+El programa usa <code>lectura &gt; UMBRAL_BORDE</code>: da por hecho que el <b>blanco da un número más alto</b> que el negro. Si en sus sensores pasa al revés, hay que cambiar <code>&gt;</code> por <code>&lt;</code> en <code>hayBordeDetectado()</code> y en <code>manejarEvasion()</code>.</div>
+
+<h3>7.6 Modificaciones</h3>
+
+<p><b>Modificación 1 — Distancia de detección</b> (<code>MiniSumo.ino</code>)</p>
+<p>El ring de Mini Sumo es chico. Con 40 cm, el robot puede “ver” a un alumno fuera del ring. Probar con valores más bajos:</p>
+<pre class="sumo"><code>const int DISTANCIA_DETECCION_CM = 30;</code></pre>
+
+<p><b>Modificación 2 — Cambiar el sentido de búsqueda</b> (<code>MaquinaDeEstado.ino</code>)</p>
+<p>Si el rival suele arrancar a la izquierda, conviene buscar para ese lado. Alcanza con invertir los signos:</p>
+<pre class="sumo"><code>void girarBuscando() {
+<span class="add">  motorIzquierdo(-VELOCIDAD_BUSQUEDA);   // antes: +
+  motorDerecho(VELOCIDAD_BUSQUEDA);      // antes: -</span>
+}</code></pre>
+
+<p><b>Modificación 3 — Velocidad de búsqueda</b> (<code>MiniSumo.ino</code>)</p>
+<p>Con <code>VELOCIDAD_BUSQUEDA = 100</code> algunos motores no llegan a arrancar, o giran muy lento. Probar en el ring entre 90 y 160. Si gira tan rápido que pasa de largo al rival, bajar el valor.</p>
+
+<p><b>Modificación 4 — Un sonido al detectar al rival</b> (<code>MaquinaDeEstado.ino</code>)</p>
+<pre class="sumo"><code>  if (hayRivalDetectado()) {
+    estadoActual = ATAQUE;
+    digitalWrite(PIN_LED_BUSQUEDA, HIGH);
+<span class="add">    tone(PIN_BUZZER, 3000, 50);   // bip corto: "¡te vi!"</span>
+  }</code></pre>
+<p>Sirve para <b>escuchar</b> cuándo el robot cambia de estado mientras lucha.</p>
+
+<div class="box warn"><b class="t">⚠ La cuenta regresiva es reglamentaria</b>
+No bajar <code>CANTIDAD_BIPS_CUENTA_REGRESIVA</code> ni la duración de cada bip para “ganar tiempo”: el reglamento exige una espera de 5 segundos antes de moverse. Verificar el valor exacto en el reglamento vigente de la LNR.</div>
+
+<h3>7.7 Lista antes de competir</h3>
+<ul class="check">
+  <li><code>CHEQUEAR_BORDE</code> en <code>true</code></li>
+  <li><code>MODO_DEBUG_SENSORES</code> y <code>DEBUG_MOTORES</code> en <code>false</code></li>
+  <li><code>UMBRAL_BORDE</code> calibrado <b>en el ring de la competencia</b> (la iluminación cambia las lecturas)</li>
+  <li>Sensores de borde verificados: izquierdo, derecho y frontal en el pin correcto</li>
+  <li>SW3 (emergencia) detiene el robot</li>
+  <li>El robot gira hacia el lado correcto al buscar y avanza recto al atacar</li>
+  <li>Batería cargada</li>
+</ul>
+
+<!-- ================================================================= -->
+<h2 id="s8">8. Problemas frecuentes</h2>
+<table>
+  <tr><th>Síntoma</th><th>Causa probable</th><th>Solución</th></tr>
+  <tr><td>La carga falla con error de puerto o de sincronización</td><td>HC-05 conectado en D0/D1</td><td>Desconectar el HC-05, subir y volver a conectar</td></tr>
+  <tr><td>Error de compilación “was not declared in this scope”</td><td>Nombre mal escrito, o variable/constante declarada en una pestaña que no es la principal</td><td>Revisar mayúsculas y declararla en el archivo principal</td></tr>
+  <tr><td>Error “expected ';'”</td><td>Falta un <code>;</code> en la línea anterior a la que marca el error</td><td>Agregarlo</td></tr>
+  <tr><td>Una rueda gira al revés</td><td>Cables del motor invertidos</td><td>Invertirlos en J7 o J8</td></tr>
+  <tr><td>El robot dobla para el lado contrario</td><td>Motores izquierdo y derecho intercambiados</td><td>Intercambiar <code>PIN_MOTOR_IZQ_*</code> y <code>PIN_MOTOR_DER_*</code></td></tr>
+  <tr><td>Fútbol: el robot no se detiene</td><td>La app no envía <b>S</b> al soltar</td><td>Configurar la app</td></tr>
+  <tr><td>Fútbol: no responde a nada</td><td>HC-05 no emparejado, o app enviando a otra velocidad</td><td>Probar con TestPlaca (eco)</td></tr>
+  <tr><td>Mini Sumo: entra en evasión sin motivo</td><td>Umbral mal calibrado o sensores sin conectar</td><td>Calibrar (7.5), o <code>CHEQUEAR_BORDE = false</code> solo para pruebas</td></tr>
+  <tr><td>Mini Sumo: se sale del ring</td><td><code>CHEQUEAR_BORDE</code> en <code>false</code>, umbral mal calibrado o comparación invertida</td><td>Ver 7.5 y 7.7</td></tr>
+  <tr><td>Mini Sumo: gira y nunca ataca</td><td>HC-SR04 mal conectado, o rival fuera de la distancia</td><td>Probar con TestPlaca; revisar <code>DISTANCIA_DETECCION_CM</code></td></tr>
+  <tr><td>Mini Sumo: no hace nada al encender</td><td>Es lo esperado: arranca en ESPERA</td><td>Presionar SW2</td></tr>
+</table>
+
+<!-- ================================================================= -->
+<h2 id="s9">9. Para pensar</h2>
+<ol>
+  <li>¿Por qué en el Mini Sumo el borde se revisa <b>antes</b> que el rival y no después? ¿Qué pasaría si se invirtiera el orden?</li>
+  <li>¿Qué sucede si se presiona el botón de emergencia (SW3) <b>durante la cuenta regresiva</b>? Buscar en el código cuánto tarda en responder y explicar por qué. <i>Pista: mirar los <code>delay()</code> de <code>manejarCuentaRegresiva()</code>.</i></li>
+  <li>¿Por qué <code>parpadearLed()</code> usa <code>millis()</code> en lugar de <code>delay()</code>? ¿Qué le pasaría al robot en BÚSQUEDA si usara <code>delay(200)</code>?</li>
+  <li>¿Qué sucede en el Fútbol si se pierde la conexión Bluetooth mientras el robot avanza? Proponer una solución.</li>
+</ol>
+
+</main>
+<script>
+// Resaltado simple de sintaxis para los bloques de código
+document.querySelectorAll('pre code').forEach(function(el){
+  if (el.querySelector('.add')) { hl(el, true); return; }
+  hl(el, false);
+});
+function hl(el, keepSpans){
+  var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  var nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(function(n){
+    var s = n.nodeValue.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    s = s.replace(/(\/\/[^\n]*)|("[^"\n]*"|'[^'\n]')|(#define|#include)|\b(void|int|bool|char|const|unsigned|long|if|else|switch|case|break|default|return|for|while|enum|static|true|false|HIGH|LOW|OUTPUT|INPUT|INPUT_PULLUP)\b|\b(\d+)\b/g,
+      function(m,cm,str,pp,kw,num){
+        if(cm) return '<span class="cm">'+cm+'</span>';
+        if(str) return '<span class="str">'+str+'</span>';
+        if(pp) return '<span class="pp">'+pp+'</span>';
+        if(kw) return '<span class="kw">'+kw+'</span>';
+        return '<span class="num">'+num+'</span>';
+      });
+    var span = document.createElement('span'); span.innerHTML = s;
+    n.parentNode.replaceChild(span, n);
+  });
+}
+</script>
+</body>
+</html>

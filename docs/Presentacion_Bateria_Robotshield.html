@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medición de batería — Robotshield V2.1</title>
+<style>
+  :root{
+    --bg:#ffffff; --panel:#f3f6fa; --text:#1d2330; --muted:#5b6475; --line:#d9dee7;
+    --blue:#0b5cad; --blue-soft:#e6f0fa; --red:#c0392b; --red-soft:#fbe9e7;
+    --green:#1f8a4c; --green-soft:#e5f4ec; --amber:#b36b00; --amber-soft:#fff3dc;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#2a2f3a;overflow:hidden;font-family:system-ui,"Segoe UI",Roboto,Ubuntu,Arial,sans-serif;color:var(--text)}
+  #escenario{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center center}
+  .slide{position:absolute;inset:0;background:var(--bg);padding:90px 120px 110px;display:none;flex-direction:column}
+  .slide.active{display:flex}
+  .kicker{font-size:28px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:14px}
+  h1{font-size:96px;line-height:1.05;color:var(--blue)}
+  h2{font-size:64px;line-height:1.1;color:var(--blue);margin-bottom:40px}
+  p,li{font-size:36px;line-height:1.4}
+  .muted{color:var(--muted)}
+  b{font-weight:700}
+  .r{color:var(--red)} .g{color:var(--green)} .bl{color:var(--blue)} .a{color:var(--amber)}
+  .fila{display:flex;gap:48px;align-items:center;flex:1}
+  .col{flex:1}
+  .cards{display:flex;gap:36px}
+  .card{flex:1;background:var(--panel);border-radius:18px;padding:36px 40px;border-top:10px solid var(--blue)}
+  .card.g{border-color:var(--green)} .card.a{border-color:var(--amber)} .card.r{border-color:var(--red)}
+  .card .v{font-size:84px;font-weight:800;line-height:1.1}
+  .card p{font-size:32px}
+  ul.lista{list-style:none}
+  ul.lista li{margin:18px 0;padding-left:46px;position:relative}
+  ul.lista li::before{content:"";position:absolute;left:0;top:.5em;width:20px;height:20px;border-radius:5px;background:var(--blue)}
+  .formula{font-size:48px;font-weight:700;background:var(--blue-soft);border-radius:16px;padding:28px 40px;text-align:center;margin:20px 0}
+  .caja{border-radius:14px;padding:26px 34px;font-size:32px;line-height:1.4}
+  .caja.warn{background:var(--amber-soft);border-left:10px solid var(--amber)}
+  .caja.danger{background:var(--red-soft);border-left:10px solid var(--red)}
+  .caja.ok{background:var(--green-soft);border-left:10px solid var(--green)}
+  pre{background:#f4f6f9;border-left:8px solid var(--blue);border-radius:12px;padding:26px 32px;font:28px/1.5 "Ubuntu Mono",Consolas,monospace;white-space:pre}
+  code{font-family:"Ubuntu Mono",Consolas,monospace;background:#f4f6f9;padding:0 .25em;border-radius:6px}
+  .kw{color:#8e24aa;font-weight:600}.cm{color:#6a7a8c;font-style:italic}.num{color:#b35900}.pp{color:var(--blue);font-weight:600}
+  .add{background:#d9f2e2;display:block}
+  table{border-collapse:collapse;font-size:32px;width:100%}
+  th,td{padding:14px 20px;border-bottom:2px solid var(--line);text-align:left}
+  th{background:var(--blue-soft)}
+  td.n{text-align:right;font-variant-numeric:tabular-nums}
+  svg{display:block;max-width:100%;height:auto}
+  /* simulador */
+  .sim{display:grid;grid-template-columns:1fr 1fr;gap:48px;flex:1;align-items:center}
+  .slider label{font-size:34px;font-weight:700;display:block;margin-bottom:16px}
+  .slider .vbat{font-size:120px;font-weight:800;color:var(--blue);line-height:1}
+  input[type=range]{width:100%;height:48px;accent-color:var(--blue);margin:24px 0 8px}
+  .escala{position:relative;height:36px;font-size:26px;color:var(--muted)}
+  .escala span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+  .lecturas td{font-size:34px}
+  .leds{display:flex;gap:40px;margin-top:30px;align-items:center}
+  .led{width:84px;height:84px;border-radius:50%;background:#e3e7ee;border:4px solid #b9c0cc}
+  .led.on{background:#ffcf33;border-color:#c79a00;box-shadow:0 0 26px #ffcf33}
+  .led.blink{animation:blink .6s steps(1) infinite}
+  @keyframes blink{50%{background:#e3e7ee;border-color:#b9c0cc;box-shadow:none}}
+  .estado{font-size:40px;font-weight:800;margin-left:20px}
+  /* pie */
+  .pie{position:absolute;left:120px;right:120px;bottom:40px;display:flex;justify-content:space-between;font-size:24px;color:var(--muted)}
+  .barra{position:absolute;left:0;top:0;height:10px;background:var(--blue)}
+  .notas{display:none}
+  #panelNotas{position:fixed;left:0;right:0;bottom:0;max-height:34vh;overflow:auto;background:#111827;color:#f3f4f6;font-size:18px;line-height:1.5;padding:14px 22px;display:none;z-index:20}
+  #panelNotas.vis{display:block}
+  .zona{position:fixed;top:0;bottom:0;width:12vw;z-index:10;cursor:pointer}
+  #zIzq{left:0} #zDer{right:0}
+  @media print{
+    @page{size:A4 landscape;margin:0}
+    html,body{overflow:visible;background:#fff;height:auto}
+    #escenario{position:static;transform:none!important;width:auto;height:auto}
+    .slide{display:flex!important;position:relative;width:1920px;height:1080px;zoom:.5498;page-break-after:always;break-after:page}
+    .zona,#panelNotas{display:none!important}
+    .led.blink{animation:none}
+  }
+</style>
+</head>
+<body>
+<div id="escenario">
+
+<!-- 1 -->
+<section class="slide" style="justify-content:center">
+  <div class="kicker">ESETP N° 703 · 5° Electrónica · LNR</div>
+  <h1 style="margin-top:20px">Medición de la batería</h1>
+  <p class="muted" style="font-size:44px;margin-top:20px">Robotshield V2.1 · Fútbol y Mini Sumo</p>
+  <div class="caja ok" style="margin-top:90px;max-width:1400px"><b>Objetivo:</b> que el robot nos diga, al encenderlo, cuánta batería le queda.</div>
+  <div class="notas">Presentar el tema. Pregunta disparadora: ¿cómo saben hoy si la batería del robot está cargada? Respuesta esperada: no lo saben hasta que el robot empieza a andar lento.</div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <div class="kicker">El problema</div>
+  <h2>Dos celdas 18650 en serie (2S)</h2>
+  <div class="cards">
+    <div class="card g"><p class="muted">Recién cargada</p><div class="v g">8,4 V</div><p>4,2 V por celda</p></div>
+    <div class="card"><p class="muted">Nominal</p><div class="v bl">7,4 V</div><p>3,7 V por celda</p></div>
+    <div class="card r"><p class="muted">Corte: no bajar de acá</p><div class="v r">6,0 V</div><p>3,0 V por celda</p></div>
+  </div>
+  <ul class="lista" style="margin-top:50px">
+    <li>Batería baja: el robot anda lento, dobla raro o el Arduino se reinicia.</li>
+    <li>Una celda de litio descargada de más <b>se daña para siempre</b>.</li>
+  </ul>
+  <div class="notas">Explicar 2S: las tensiones de las celdas se suman. El rango que vamos a medir va de 8,4 V a 6,0 V. Límite de la placa: 10 V, por eso no se puede usar una batería 3S (12,6 V).</div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <div class="kicker">El circuito</div>
+  <h2>A0 no aguanta más de 5 V: divisor de tensión</h2>
+  <div class="fila">
+    <div style="flex:0 0 820px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 330" font-family="Segoe UI,Roboto,Ubuntu,Arial,sans-serif" font-size="15">
+<text x="120" y="22" text-anchor="middle" font-weight="700" fill="#0b5cad">VCC (batería, después de SW1)</text>
+<line x1="120" y1="32" x2="120" y2="60" stroke="#1d2330" stroke-width="2" fill="none"/>
+<rect x="106" y="60" width="28" height="70" rx="3" fill="#fff" stroke="#1d2330" stroke-width="2"/>
+<text x="146" y="92" fill="#1d2330" font-weight="700">R7</text><text x="146" y="110" fill="#5b6475">39 kΩ</text>
+<line x1="120" y1="130" x2="120" y2="175" stroke="#1d2330" stroke-width="2" fill="none"/>
+<circle cx="120" cy="175" r="5" fill="#1d2330"/>
+<line x1="120" y1="175" x2="420" y2="175" stroke="#1d2330" stroke-width="2" fill="none"/>
+<circle cx="300" cy="175" r="5" fill="#1d2330"/>
+<circle cx="420" cy="175" r="6" fill="#fff" stroke="#c0392b" stroke-width="3"/>
+<text x="432" y="170" fill="#c0392b" font-weight="700">A0</text><text x="432" y="190" fill="#5b6475" font-size="13">al Arduino</text>
+<line x1="120" y1="175" x2="120" y2="200" stroke="#1d2330" stroke-width="2" fill="none"/>
+<rect x="106" y="200" width="28" height="70" rx="3" fill="#fff" stroke="#1d2330" stroke-width="2"/>
+<text x="146" y="232" fill="#1d2330" font-weight="700">R8</text><text x="146" y="250" fill="#5b6475">10 kΩ</text>
+<line x1="120" y1="270" x2="120" y2="295" stroke="#1d2330" stroke-width="2" fill="none"/>
+<line x1="300" y1="175" x2="300" y2="226" stroke="#1d2330" stroke-width="2" fill="none"/>
+<line x1="276" y1="226" x2="324" y2="226" stroke="#1d2330" stroke-width="3"/>
+<line x1="276" y1="238" x2="324" y2="238" stroke="#1d2330" stroke-width="3"/>
+<line x1="300" y1="238" x2="300" y2="295" stroke="#1d2330" stroke-width="2" fill="none"/>
+<text x="334" y="228" fill="#1d2330" font-weight="700">C3</text><text x="334" y="246" fill="#5b6475">100 nF</text>
+<line x1="120" y1="295" x2="300" y2="295" stroke="#1d2330" stroke-width="2" fill="none"/>
+<line x1="210" y1="295" x2="210" y2="305" stroke="#1d2330" stroke-width="2" fill="none"/>
+<line x1="184" y1="305" x2="236" y2="305" stroke="#1d2330" stroke-width="2"/>
+<line x1="194" y1="311" x2="226" y2="311" stroke="#1d2330" stroke-width="2"/>
+<line x1="204" y1="317" x2="216" y2="317" stroke="#1d2330" stroke-width="2"/>
+<text x="250" y="322" fill="#5b6475" font-size="13">GND</text>
+</svg></div>
+    <div class="col">
+      <div class="formula">V<sub>A0</sub> = V<sub>bat</sub> / 4,9</div>
+      <ul class="lista">
+        <li>R8 / (R7 + R8) = 10 kΩ / 49 kΩ</li>
+        <li>8,4 V en la batería → <b>1,71 V</b> en A0</li>
+        <li>El ADC: 0 a 5 V → <b>0 a 1023</b></li>
+        <li>C3 filtra el ruido de los motores</li>
+      </ul>
+    </div>
+  </div>
+  <div class="notas">El ADC es una regla de 1024 marcas entre 0 V y 5 V: cada marca vale unos 4,9 mV. Si conectamos 8,4 V directo a A0 se puede dañar el microcontrolador. En el programa se hace la cuenta al revés: tensión en A0 × 4,9.</div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <div class="kicker">Armado</div>
+  <h2>Soldar R7, R8 y C3 en la cara de abajo</h2>
+  <div class="fila">
+    <div style="flex:0 0 1000px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 666 336" font-family="Segoe UI,Roboto,Ubuntu,Arial,sans-serif" font-size="17">
+<defs><clipPath id="vent"><rect x="0" y="0" width="666" height="336" rx="10"/></clipPath></defs>
+<g clip-path="url(#vent)">
+<rect x="0" y="0" width="666" height="336" fill="#fff"/>
+<polygon points="35.6,-233.0 0.0,-197.4 0.0,282.7 35.6,318.2 35.6,325.3 38.7,332.9 46.2,336.0 792.1,336.0 960.1,168.0 960.1,-197.4 791.2,-367.0 791.2,-391.2 772.2,-410.8 53.3,-410.8 35.6,-393.0 35.6,-233.0" fill="#dfeedd" stroke="#1f8a4c" stroke-width="4" stroke-linejoin="round"/>
+<circle cx="737.9" cy="104.9" r="9.5" fill="#c9a227" stroke="#8a6d10"/><circle cx="737.9" cy="104.9" r="4.0" fill="#fff"/>
+<circle cx="765.9" cy="104.9" r="10.6" fill="#c9a227" stroke="#8a6d10"/><circle cx="765.9" cy="104.9" r="4.5" fill="#fff"/>
+<circle cx="737.9" cy="-241.8" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="737.9" cy="-241.8" r="5.2" fill="#fff"/>
+<circle cx="737.9" cy="-150.9" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="737.9" cy="-150.9" r="5.2" fill="#fff"/>
+<circle cx="800.9" cy="-241.8" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="800.9" cy="-241.8" r="5.2" fill="#fff"/>
+<circle cx="800.9" cy="-150.9" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="800.9" cy="-150.9" r="5.2" fill="#fff"/>
+<circle cx="391.2" cy="122.6" r="10.1" fill="#c9a227" stroke="#8a6d10"/><circle cx="391.2" cy="122.6" r="4.2" fill="#fff"/>
+<circle cx="426.7" cy="122.6" r="11.2" fill="#c9a227" stroke="#8a6d10"/><circle cx="426.7" cy="122.6" r="4.7" fill="#fff"/>
+<circle cx="569.0" cy="-126.3" r="10.1" fill="#c9a227" stroke="#8a6d10"/><circle cx="569.0" cy="-126.3" r="4.2" fill="#fff"/>
+<circle cx="569.0" cy="-161.8" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="569.0" cy="-161.8" r="5.2" fill="#fff"/>
+<circle cx="768.1" cy="-313.0" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="768.1" cy="-313.0" r="5.2" fill="#fff"/>
+<circle cx="732.5" cy="-313.0" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="732.5" cy="-313.0" r="5.2" fill="#fff"/>
+<circle cx="697.0" cy="-313.0" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="697.0" cy="-313.0" r="5.2" fill="#fff"/>
+<circle cx="661.4" cy="-313.0" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="661.4" cy="-313.0" r="5.2" fill="#fff"/>
+<circle cx="625.9" cy="-313.0" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="625.9" cy="-313.0" r="5.2" fill="#fff"/>
+<circle cx="142.2" cy="140.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="142.2" cy="140.4" r="5.2" fill="#fff"/>
+<circle cx="142.2" cy="176.0" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="142.2" cy="176.0" r="5.2" fill="#fff"/>
+<circle cx="142.2" cy="211.5" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="142.2" cy="211.5" r="5.2" fill="#fff"/>
+<circle cx="764.5" cy="229.3" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="764.5" cy="229.3" r="5.2" fill="#fff"/>
+<circle cx="764.5" cy="193.8" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="764.5" cy="193.8" r="5.2" fill="#fff"/>
+<circle cx="640.1" cy="-55.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="640.1" cy="-55.2" r="5.2" fill="#fff"/>
+<circle cx="640.1" cy="-19.6" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="640.1" cy="-19.6" r="5.2" fill="#fff"/>
+<circle cx="640.1" cy="16.0" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="640.1" cy="16.0" r="5.2" fill="#fff"/>
+<circle cx="640.1" cy="51.5" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="640.1" cy="51.5" r="5.2" fill="#fff"/>
+<circle cx="640.1" cy="87.1" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="640.1" cy="87.1" r="5.2" fill="#fff"/>
+<circle cx="640.1" cy="122.6" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="640.1" cy="122.6" r="5.2" fill="#fff"/>
+<circle cx="213.4" cy="140.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="213.4" cy="140.4" r="5.2" fill="#fff"/>
+<circle cx="213.4" cy="176.0" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="213.4" cy="176.0" r="5.2" fill="#fff"/>
+<circle cx="213.4" cy="211.5" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="213.4" cy="211.5" r="5.2" fill="#fff"/>
+<circle cx="462.3" cy="-10.7" r="11.2" fill="#c9a227" stroke="#8a6d10"/><circle cx="462.3" cy="-10.7" r="4.7" fill="#fff"/>
+<circle cx="568.7" cy="-10.7" r="11.2" fill="#c9a227" stroke="#8a6d10"/><circle cx="568.7" cy="-10.7" r="4.7" fill="#fff"/>
+<circle cx="177.8" cy="140.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="177.8" cy="140.4" r="5.2" fill="#fff"/>
+<circle cx="177.8" cy="176.0" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="177.8" cy="176.0" r="5.2" fill="#fff"/>
+<circle cx="177.8" cy="211.5" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="177.8" cy="211.5" r="5.2" fill="#fff"/>
+<circle cx="248.9" cy="-323.6" r="11.2" fill="#c9a227" stroke="#8a6d10"/><circle cx="248.9" cy="-323.6" r="4.7" fill="#fff"/>
+<circle cx="248.9" cy="-217.0" r="11.2" fill="#c9a227" stroke="#8a6d10"/><circle cx="248.9" cy="-217.0" r="4.7" fill="#fff"/>
+<circle cx="320.0" cy="238.2" r="9.5" fill="#c9a227" stroke="#8a6d10"/><circle cx="320.0" cy="238.2" r="4.0" fill="#fff"/>
+<circle cx="348.0" cy="238.2" r="10.6" fill="#c9a227" stroke="#8a6d10"/><circle cx="348.0" cy="238.2" r="4.5" fill="#fff"/>
+<circle cx="320.0" cy="-286.3" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="320.0" cy="-286.3" r="5.2" fill="#fff"/>
+<circle cx="320.0" cy="-250.7" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="320.0" cy="-250.7" r="5.2" fill="#fff"/>
+<circle cx="320.0" cy="-215.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="320.0" cy="-215.2" r="5.2" fill="#fff"/>
+<circle cx="320.0" cy="-179.6" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="320.0" cy="-179.6" r="5.2" fill="#fff"/>
+<circle cx="408.9" cy="-321.9" r="11.2" fill="#c9a227" stroke="#8a6d10"/><circle cx="408.9" cy="-321.9" r="4.7" fill="#fff"/>
+<circle cx="408.9" cy="-215.2" r="11.2" fill="#c9a227" stroke="#8a6d10"/><circle cx="408.9" cy="-215.2" r="4.7" fill="#fff"/>
+<circle cx="569.0" cy="122.6" r="11.2" fill="#c9a227" stroke="#8a6d10"/><circle cx="569.0" cy="122.6" r="4.7" fill="#fff"/>
+<circle cx="462.3" cy="122.6" r="11.2" fill="#c9a227" stroke="#8a6d10"/><circle cx="462.3" cy="122.6" r="4.7" fill="#fff"/>
+<circle cx="195.4" cy="-286.7" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="195.4" cy="-286.7" r="5.2" fill="#fff"/>
+<circle cx="159.9" cy="-286.7" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="159.9" cy="-286.7" r="5.2" fill="#fff"/>
+<circle cx="124.3" cy="-286.7" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="124.3" cy="-286.7" r="5.2" fill="#fff"/>
+<circle cx="88.8" cy="-286.7" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="88.8" cy="-286.7" r="5.2" fill="#fff"/>
+<circle cx="408.9" cy="-126.3" r="10.1" fill="#c9a227" stroke="#8a6d10"/><circle cx="408.9" cy="-126.3" r="4.2" fill="#fff"/>
+<circle cx="408.9" cy="-161.8" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="408.9" cy="-161.8" r="5.2" fill="#fff"/>
+<circle cx="924.6" cy="87.1" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="924.6" cy="87.1" r="5.2" fill="#fff"/>
+<circle cx="924.6" cy="122.6" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="924.6" cy="122.6" r="5.2" fill="#fff"/>
+<circle cx="924.6" cy="-55.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="924.6" cy="-55.2" r="5.2" fill="#fff"/>
+<circle cx="924.6" cy="-19.6" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="924.6" cy="-19.6" r="5.2" fill="#fff"/>
+<circle cx="248.9" cy="-126.3" r="10.1" fill="#c9a227" stroke="#8a6d10"/><circle cx="248.9" cy="-126.3" r="4.2" fill="#fff"/>
+<circle cx="248.9" cy="-161.8" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="248.9" cy="-161.8" r="5.2" fill="#fff"/>
+<circle cx="853.4" cy="-55.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="853.4" cy="-55.2" r="5.2" fill="#fff"/>
+<circle cx="853.4" cy="-19.6" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="853.4" cy="-19.6" r="5.2" fill="#fff"/>
+<circle cx="853.4" cy="16.0" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="853.4" cy="16.0" r="5.2" fill="#fff"/>
+<circle cx="853.4" cy="51.5" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="853.4" cy="51.5" r="5.2" fill="#fff"/>
+<circle cx="853.4" cy="87.1" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="853.4" cy="87.1" r="5.2" fill="#fff"/>
+<circle cx="853.4" cy="122.6" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="853.4" cy="122.6" r="5.2" fill="#fff"/>
+<circle cx="113.8" cy="-69.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="113.8" cy="-69.4" r="5.2" fill="#fff"/>
+<circle cx="113.8" cy="21.6" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="113.8" cy="21.6" r="5.2" fill="#fff"/>
+<circle cx="176.8" cy="-69.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="176.8" cy="-69.4" r="5.2" fill="#fff"/>
+<circle cx="176.8" cy="21.6" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="176.8" cy="21.6" r="5.2" fill="#fff"/>
+<circle cx="554.7" cy="-321.9" r="11.2" fill="#c9a227" stroke="#8a6d10"/><circle cx="554.7" cy="-321.9" r="4.7" fill="#fff"/>
+<circle cx="554.7" cy="-215.2" r="11.2" fill="#c9a227" stroke="#8a6d10"/><circle cx="554.7" cy="-215.2" r="4.7" fill="#fff"/>
+<circle cx="426.7" cy="211.5" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="426.7" cy="211.5" r="5.2" fill="#fff"/>
+<circle cx="569.0" cy="211.5" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="569.0" cy="211.5" r="5.2" fill="#fff"/>
+<circle cx="692.5" cy="301.3" r="10.1" fill="#c9a227" stroke="#8a6d10"/><circle cx="692.5" cy="301.3" r="4.2" fill="#fff"/>
+<circle cx="692.5" cy="273.4" r="10.1" fill="#c9a227" stroke="#8a6d10"/><circle cx="692.5" cy="273.4" r="4.2" fill="#fff"/>
+<circle cx="692.5" cy="244.4" r="10.1" fill="#c9a227" stroke="#8a6d10"/><circle cx="692.5" cy="244.4" r="4.2" fill="#fff"/>
+<circle cx="621.3" cy="301.3" r="10.1" fill="#c9a227" stroke="#8a6d10"/><circle cx="621.3" cy="301.3" r="4.2" fill="#fff"/>
+<circle cx="621.3" cy="273.4" r="10.1" fill="#c9a227" stroke="#8a6d10"/><circle cx="621.3" cy="273.4" r="4.2" fill="#fff"/>
+<circle cx="621.3" cy="244.4" r="10.1" fill="#c9a227" stroke="#8a6d10"/><circle cx="621.3" cy="244.4" r="4.2" fill="#fff"/>
+<circle cx="569.0" cy="300.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="569.0" cy="300.4" r="5.2" fill="#fff"/>
+<circle cx="533.4" cy="300.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="533.4" cy="300.4" r="5.2" fill="#fff"/>
+<circle cx="497.8" cy="300.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="497.8" cy="300.4" r="5.2" fill="#fff"/>
+<circle cx="462.3" cy="300.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="462.3" cy="300.4" r="5.2" fill="#fff"/>
+<circle cx="426.7" cy="300.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="426.7" cy="300.4" r="5.2" fill="#fff"/>
+<circle cx="391.2" cy="300.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="391.2" cy="300.4" r="5.2" fill="#fff"/>
+<circle cx="355.6" cy="300.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="355.6" cy="300.4" r="5.2" fill="#fff"/>
+<circle cx="320.0" cy="300.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="320.0" cy="300.4" r="5.2" fill="#fff"/>
+<circle cx="248.9" cy="300.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="248.9" cy="300.4" r="5.2" fill="#fff"/>
+<circle cx="213.4" cy="300.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="213.4" cy="300.4" r="5.2" fill="#fff"/>
+<circle cx="177.8" cy="300.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="177.8" cy="300.4" r="5.2" fill="#fff"/>
+<circle cx="142.2" cy="300.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="142.2" cy="300.4" r="5.2" fill="#fff"/>
+<circle cx="106.7" cy="300.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="106.7" cy="300.4" r="5.2" fill="#fff"/>
+<circle cx="71.1" cy="300.4" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="71.1" cy="300.4" r="5.2" fill="#fff"/>
+<circle cx="697.0" cy="-375.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="697.0" cy="-375.2" r="5.2" fill="#fff"/>
+<circle cx="661.4" cy="-375.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="661.4" cy="-375.2" r="5.2" fill="#fff"/>
+<circle cx="625.9" cy="-375.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="625.9" cy="-375.2" r="5.2" fill="#fff"/>
+<circle cx="590.3" cy="-375.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="590.3" cy="-375.2" r="5.2" fill="#fff"/>
+<circle cx="554.7" cy="-375.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="554.7" cy="-375.2" r="5.2" fill="#fff"/>
+<circle cx="519.2" cy="-375.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="519.2" cy="-375.2" r="5.2" fill="#fff"/>
+<circle cx="483.6" cy="-375.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="483.6" cy="-375.2" r="5.2" fill="#fff"/>
+<circle cx="448.1" cy="-375.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="448.1" cy="-375.2" r="5.2" fill="#fff"/>
+<circle cx="412.5" cy="-375.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="412.5" cy="-375.2" r="5.2" fill="#fff"/>
+<circle cx="376.9" cy="-375.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="376.9" cy="-375.2" r="5.2" fill="#fff"/>
+<circle cx="320.0" cy="-375.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="320.0" cy="-375.2" r="5.2" fill="#fff"/>
+<circle cx="284.5" cy="-375.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="284.5" cy="-375.2" r="5.2" fill="#fff"/>
+<circle cx="248.9" cy="-375.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="248.9" cy="-375.2" r="5.2" fill="#fff"/>
+<circle cx="213.4" cy="-375.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="213.4" cy="-375.2" r="5.2" fill="#fff"/>
+<circle cx="177.8" cy="-375.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="177.8" cy="-375.2" r="5.2" fill="#fff"/>
+<circle cx="142.2" cy="-375.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="142.2" cy="-375.2" r="5.2" fill="#fff"/>
+<circle cx="106.7" cy="-375.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="106.7" cy="-375.2" r="5.2" fill="#fff"/>
+<circle cx="71.1" cy="-375.2" r="12.3" fill="#c9a227" stroke="#8a6d10"/><circle cx="71.1" cy="-375.2" r="5.2" fill="#fff"/>
+<rect x="293.7" y="158.7" width="16.4" height="20.3" rx="3" fill="#0b5cad" stroke="#333"/>
+<rect x="322.8" y="158.7" width="16.4" height="20.3" rx="3" fill="#0b5cad" stroke="#333"/>
+<rect x="80.7" y="-331.7" width="16.8" height="19.6" rx="3" fill="#b9a35a" stroke="#333"/>
+<rect x="108.7" y="-331.7" width="16.8" height="19.6" rx="3" fill="#b9a35a" stroke="#333"/>
+<rect x="80.7" y="-249.9" width="16.8" height="19.6" rx="3" fill="#b9a35a" stroke="#333"/>
+<rect x="108.7" y="-249.9" width="16.8" height="19.6" rx="3" fill="#b9a35a" stroke="#333"/>
+<rect x="321.9" y="59.5" width="16.8" height="19.6" rx="3" fill="#c0392b" stroke="#333"/>
+<rect x="293.9" y="59.5" width="16.8" height="19.6" rx="3" fill="#c0392b" stroke="#333"/>
+<rect x="293.9" y="109.3" width="16.8" height="19.6" rx="3" fill="#c0392b" stroke="#333"/>
+<rect x="321.9" y="109.3" width="16.8" height="19.6" rx="3" fill="#c0392b" stroke="#333"/>
+<line x1="312.3" y1="69.3" x2="411.32000000000033" y2="69.30000000000004" stroke="#c0392b" stroke-width="2.5"/>
+<rect x="411.32000000000033" y="53.30000000000004" width="170" height="30" rx="6" fill="#fff" stroke="#c0392b" stroke-width="2.5"/>
+<text x="419.32000000000033" y="75.30000000000004" fill="#c0392b" font-weight="700">R7 · 39 kΩ (393)</text>
+<line x1="312.3" y1="119.1" x2="411.32000000000033" y2="119.084" stroke="#c0392b" stroke-width="2.5"/>
+<rect x="411.32000000000033" y="103.084" width="170" height="30" rx="6" fill="#fff" stroke="#c0392b" stroke-width="2.5"/>
+<text x="419.32000000000033" y="125.084" fill="#c0392b" font-weight="700">R8 · 10 kΩ (103)</text>
+<line x1="312.0" y1="168.9" x2="411.32000000000033" y2="168.86799999999997" stroke="#0b5cad" stroke-width="2.5"/>
+<rect x="411.32000000000033" y="152.86799999999997" width="122" height="30" rx="6" fill="#fff" stroke="#0b5cad" stroke-width="2.5"/>
+<text x="419.32000000000033" y="174.86799999999997" fill="#0b5cad" font-weight="700">C3 · 100 nF</text>
+<text x="160" y="270" text-anchor="middle" fill="#5b6475" font-size="15">J13 · A0 … A5</text>
+<text x="249" y="285" text-anchor="middle" fill="#c0392b" font-weight="700" font-size="15">A0</text>
+</g>
+<rect x="1" y="1" width="664" height="334" rx="10" fill="none" stroke="#d9dee7" stroke-width="2"/>
+</svg></div>
+    <div class="col">
+      <ul class="lista">
+        <li>SMD 0805, sin polaridad</li>
+        <li>R7 = <code>393</code> · R8 = <code>103</code></li>
+        <li>C3 no tiene código</li>
+      </ul>
+      <div class="caja danger" style="margin-top:30px"><b>No intercambiar R7 y R8:</b> llegarían más de 5 V a A0.</div>
+    </div>
+  </div>
+  <div class="notas">Hay que sacar el Robotshield del Arduino. Quedan cerca del header J13, donde está A0. Antes de montar el Arduino, probar con el programa MedirBateria y comparar con el multímetro.</div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <div class="kicker">Simulador</div>
+  <h2>¿Qué lee el Arduino?</h2>
+  <div class="sim">
+    <div class="slider">
+      <label for="vb">Tensión real de la batería</label>
+      <div class="vbat"><span id="vbTxt">8,0</span> V</div>
+      <input type="range" id="vb" min="6.0" max="8.4" step="0.1" value="8.0" aria-label="Tensión real de la batería">
+      <div class="escala"><span style="left:0.0%">6,0 V</span><span style="left:45.8%">7,1</span><span style="left:58.3%">7,4</span><span style="left:75.0%">7,8</span><span style="left:100.0%">8,4 V</span></div>
+      <div class="leds"><div class="led" id="l1"></div><div class="led" id="l2"></div><div class="led" id="l3"></div><span class="estado" id="est"></span></div>
+    </div>
+    <table class="lecturas">
+      <tr><td>Tensión en A0</td><td class="n" id="va0"></td></tr>
+      <tr><td>5 V del Arduino (regla del ADC)</td><td class="n" id="avcc"></td></tr>
+      <tr><td><code>analogRead(A0)</code></td><td class="n" id="adc"></td></tr>
+      <tr><td><b>Tensión que calcula el Arduino</b></td><td class="n"><b id="calc"></b></td></tr>
+    </table>
+  </div>
+  <div class="notas">Mover el deslizador (mouse o flechas del teclado con el deslizador seleccionado). Bajar de 8,4 V hasta 6,0 V y mirar la última fila. Por debajo de unos 6,7 V el regulador del Arduino ya no da 5 V, la «regla» se achica y el Arduino cree que hay MÁS tensión. Estimación típica: diodo D2 0,7 V + regulador 1,0 V.</div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <div class="kicker">La trampa del regulador</div>
+  <h2>Por eso avisamos «crítica» en 7,1 V</h2>
+  <div class="fila">
+    <div style="flex:0 0 1150px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 420" font-family="Segoe UI,Roboto,Ubuntu,Arial,sans-serif" font-size="16">
+<rect x="70.0" y="30" width="192.5" height="320" fill="#fbe9e7"/>
+<text x="166.2" y="48" text-anchor="middle" fill="#c0392b" font-size="15" font-weight="700">el regulador</text>
+<text x="166.2" y="64" text-anchor="middle" fill="#c0392b" font-size="15" font-weight="700">ya no da 5 V</text>
+<line x1="70" y1="350.0" x2="730" y2="350.0" stroke="#e3e7ee"/>
+<text x="62" y="354.0" text-anchor="end" fill="#5b6475">6,0</text>
+<text x="70.0" y="370" text-anchor="middle" fill="#5b6475">6,0</text>
+<line x1="70" y1="296.7" x2="730" y2="296.7" stroke="#e3e7ee"/>
+<text x="62" y="300.7" text-anchor="end" fill="#5b6475">6,4</text>
+<text x="180.0" y="370" text-anchor="middle" fill="#5b6475">6,4</text>
+<line x1="70" y1="243.3" x2="730" y2="243.3" stroke="#e3e7ee"/>
+<text x="62" y="247.3" text-anchor="end" fill="#5b6475">6,8</text>
+<text x="290.0" y="370" text-anchor="middle" fill="#5b6475">6,8</text>
+<line x1="70" y1="190.0" x2="730" y2="190.0" stroke="#e3e7ee"/>
+<text x="62" y="194.0" text-anchor="end" fill="#5b6475">7,2</text>
+<text x="400.0" y="370" text-anchor="middle" fill="#5b6475">7,2</text>
+<line x1="70" y1="136.7" x2="730" y2="136.7" stroke="#e3e7ee"/>
+<text x="62" y="140.7" text-anchor="end" fill="#5b6475">7,6</text>
+<text x="510.0" y="370" text-anchor="middle" fill="#5b6475">7,6</text>
+<line x1="70" y1="83.3" x2="730" y2="83.3" stroke="#e3e7ee"/>
+<text x="62" y="87.3" text-anchor="end" fill="#5b6475">8,0</text>
+<text x="620.0" y="370" text-anchor="middle" fill="#5b6475">8,0</text>
+<line x1="70" y1="30.0" x2="730" y2="30.0" stroke="#e3e7ee"/>
+<text x="62" y="34.0" text-anchor="end" fill="#5b6475">8,4</text>
+<text x="730.0" y="370" text-anchor="middle" fill="#5b6475">8,4</text>
+<line x1="70" y1="350" x2="730" y2="350" stroke="#5b6475"/>
+<text x="400.0" y="400" text-anchor="middle" fill="#1d2330">Tensión REAL de la batería (V)</text>
+<text x="18" y="190.0" text-anchor="middle" fill="#1d2330" transform="rotate(-90 18 190.0)">Tensión que calcula el Arduino (V)</text>
+<line x1="70" y1="203.3" x2="730" y2="203.3" stroke="#1d2330" stroke-dasharray="2 4" stroke-width="1.5"/>
+<text x="726" y="197.3" text-anchor="end" fill="#1d2330" font-size="15">umbral CRÍTICA = 7,1 V</text>
+<line x1="70.0" y1="350.0" x2="730.0" y2="30.0" stroke="#0b5cad" stroke-width="2" stroke-dasharray="7 5"/>
+<polyline points="70.0,219.8 97.5,225.8 125.0,231.5 152.5,237.0 180.0,242.2 207.5,247.2 235.0,252.0 262.5,256.7 290.0,243.3 317.5,230.0 345.0,216.7 372.5,203.3 400.0,190.0 427.5,176.7 455.0,163.3 482.5,150.0 510.0,136.7 537.5,123.3 565.0,110.0 592.5,96.7 620.0,83.3 647.5,70.0 675.0,56.7 702.5,43.3 730.0,30.0" fill="none" stroke="#c0392b" stroke-width="2.5" stroke-linejoin="round"/>
+<circle cx="70.0" cy="219.8" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="97.5" cy="225.8" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="125.0" cy="231.5" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="152.5" cy="237.0" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="180.0" cy="242.2" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="207.5" cy="247.2" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="235.0" cy="252.0" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="262.5" cy="256.7" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="290.0" cy="243.3" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="317.5" cy="230.0" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="345.0" cy="216.7" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="372.5" cy="203.3" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="400.0" cy="190.0" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="427.5" cy="176.7" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="455.0" cy="163.3" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="482.5" cy="150.0" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="510.0" cy="136.7" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="537.5" cy="123.3" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="565.0" cy="110.0" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="592.5" cy="96.7" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="620.0" cy="83.3" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="647.5" cy="70.0" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="675.0" cy="56.7" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="702.5" cy="43.3" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<circle cx="730.0" cy="30.0" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<text x="551.2" y="90.0" fill="#0b5cad" font-weight="700" text-anchor="end">lo ideal (leída = real)</text>
+<text x="83.7" y="240.7" fill="#c0392b" font-weight="700">lo que lee el Arduino</text>
+<rect x="417.5" y="282" width="290" height="50" rx="6" fill="#fff" stroke="#d9dee7"/>
+<line x1="427.5" y1="296" x2="457.5" y2="296" stroke="#0b5cad" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="465.5" y="300" fill="#1d2330">Ideal: leída = real</text>
+<line x1="427.5" y1="318" x2="457.5" y2="318" stroke="#c0392b" stroke-width="2.5"/>
+<circle cx="442.5" cy="318" r="4" fill="#c0392b" stroke="#fff" stroke-width="2"/>
+<text x="465.5" y="322" fill="#1d2330">Leída por el Arduino (caso típico)</text>
+</svg></div>
+    <div class="col">
+      <ul class="lista">
+        <li>Debajo de ~6,7 V la lectura <b class="r">sube</b> aunque la batería baje</li>
+        <li>Con el umbral en 6,2 V, el robot <b>nunca avisaría</b></li>
+        <li>7,1 V deja margen para cada placa</li>
+      </ul>
+    </div>
+  </div>
+  <div class="notas">Es lo que vieron en el simulador. Cada placa es un poco distinta: con la fuente de laboratorio van a medir en qué tensión cae el pin 5V de su Arduino. Tiene que quedar por debajo de 7,1 V.</div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <div class="kicker">En el programa</div>
+  <h2>Copiar <code>Bateria.ino</code> y agregar una línea</h2>
+  <div class="fila" style="align-items:flex-start">
+    <div class="col">
+<pre><span class="cm">// Futbol.ino, en setup()</span>
+  detenerMotores();
+<span class="add">  mostrarNivelBateria();</span>  digitalWrite(PIN_LED_ENCENDIDO, HIGH);
+
+<span class="cm">// MiniSumo.ino, al final de setup()</span>
+  entrarEnEspera();
+<span class="add">  mostrarNivelBateria();</span></pre>
+      <p class="muted" style="margin-top:20px;font-size:30px">Se mide una sola vez: al encender o con RESET.</p>
+    </div>
+    <div style="flex:0 0 700px">
+      <table>
+        <tr><th>Batería</th><th>Indicación</th></tr>
+        <tr><td>más de 7,8 V</td><td>3 LEDs + 3 bips</td></tr>
+        <tr><td>7,4 a 7,8 V</td><td>2 LEDs + 2 bips</td></tr>
+        <tr><td>7,1 a 7,4 V</td><td>1 LED + 1 bip</td></tr>
+        <tr><td class="r"><b>7,1 V o menos</b></td><td class="r"><b>LED 1 parpadea 5 veces</b></td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="notas">Bateria.ino es igual para Fútbol y Mini Sumo y trae toda la configuración. En Fútbol la llamada va antes de prender el LED de encendido (si no, lo apaga). En Mini Sumo va al final de setup(). Con USB y SW1 apagado no muestra nada.</div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <div class="kicker">Manos a la obra</div>
+  <h2>Los pasos</h2>
+  <div class="cards" style="margin-top:20px">
+    <div class="card"><div class="v bl">1</div><p><b>Soldar</b> R7, R8 y C3</p></div>
+    <div class="card"><div class="v bl">2</div><p><b>Probar</b> con <code>MedirBateria</code> y el multímetro</p></div>
+    <div class="card"><div class="v bl">3</div><p><b>Integrar</b> <code>Bateria.ino</code> en el programa</p></div>
+    <div class="card g"><div class="v g">4</div><p><b>Verificar</b> con la fuente de laboratorio</p></div>
+  </div>
+  <div class="caja warn" style="margin-top:60px">Antes de cada partido o combate: encender, <b>mirar los LEDs</b> y, si hace falta, cambiar la batería.</div>
+  <div class="notas">Todo el detalle está en el tutorial (Tutorial_Bateria_Robotshield.pdf).</div>
+</section>
+
+</div>
+
+<div class="zona" id="zIzq" aria-hidden="true"></div>
+<div class="zona" id="zDer" aria-hidden="true"></div>
+<div id="panelNotas"></div>
+
+<script>
+(function(){
+  const esc=document.getElementById('escenario');
+  const slides=[...document.querySelectorAll('.slide')];
+  const panel=document.getElementById('panelNotas');
+  let i=0;
+  slides.forEach((s,k)=>{
+    const b=document.createElement('div');b.className='barra';b.style.width=((k+1)/slides.length*100)+'%';s.appendChild(b);
+    const p=document.createElement('div');p.className='pie';p.innerHTML='<span>Medición de batería · Robotshield V2.1</span><span>'+(k+1)+' / '+slides.length+'</span>';s.appendChild(p);
+  });
+  function escalar(){const k=Math.min(innerWidth/1920,innerHeight/1080);esc.style.transform='translate(-50%,-50%) scale('+k+')';}
+  function mostrar(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    const nt=slides[i].querySelector('.notas');panel.textContent=nt?nt.textContent:'';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  addEventListener('resize',escalar);
+  document.addEventListener('keydown',e=>{
+    if(e.target.tagName==='INPUT'&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(e.key))return;
+    if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();mostrar(i+1)}
+    else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();mostrar(i-1)}
+    else if(e.key==='Home')mostrar(0);
+    else if(e.key==='End')mostrar(slides.length-1);
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{})}
+    else if(e.key==='s'||e.key==='S'){panel.classList.toggle('vis')}
+    else if(e.key==='Escape'){e.target.blur&&e.target.blur()}
+  });
+  document.getElementById('zIzq').onclick=()=>mostrar(i-1);
+  document.getElementById('zDer').onclick=()=>mostrar(i+1);
+  addEventListener('hashchange',()=>{const n=parseInt(location.hash.slice(1));if(n&&n-1!==i)mostrar(n-1)});
+
+  // ---- simulador ----
+  const vb=document.getElementById('vb');
+  const f=(x,d)=>x.toFixed(d).replace('.',',');
+  function sim(){
+    const v=parseFloat(vb.value);
+    const avcc=Math.min(5,v-1.7);               // diodo D2 (~0,7 V) + regulador (~1,0 V)
+    const va0=v/4.9;
+    const adc=Math.min(1023,Math.floor(va0*1024/avcc));
+    const calc=adc*5/1024*4.9;                  // el programa supone 5 V
+    document.getElementById('vbTxt').textContent=f(v,1);
+    document.getElementById('va0').textContent=f(va0,2)+' V';
+    const a=document.getElementById('avcc');a.textContent=f(avcc,2)+' V';a.style.color=avcc<5?'var(--red)':'';
+    document.getElementById('adc').textContent=adc;
+    const c=document.getElementById('calc');c.textContent=f(calc,2)+' V';c.style.color=Math.abs(calc-v)>0.05?'var(--red)':'';
+    let n=0,txt='',col='';
+    if(calc<=7.1){n=-1;txt='CRÍTICA';col='var(--red)'}
+    else if(calc>7.8){n=3;txt='LLENA';col='var(--green)'}
+    else if(calc>7.4){n=2;txt='MEDIA';col='var(--blue)'}
+    else{n=1;txt='BAJA';col='var(--amber)'}
+    ['l1','l2','l3'].forEach((id,k)=>{const e=document.getElementById(id);
+      e.classList.toggle('on',n>k||(n===-1&&k===0));e.classList.toggle('blink',n===-1&&k===0);});
+    const e=document.getElementById('est');e.textContent=txt;e.style.color=col;
+  }
+  vb.addEventListener('input',sim);sim();
+
+  escalar();
+  mostrar((parseInt(location.hash.slice(1))||1)-1);
+})();
+</script>
+</body>
+</html>

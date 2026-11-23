@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Programación Robotshield</title>
+<style>
+  :root{
+    --bg:#0f1724; --panel:#18233a; --text:#eef2f8; --muted:#9aa8bf; --line:#2b3a57;
+    --blue:#4ea3ff; --green:#3ecf7a; --red:#ff6b5a; --amber:#ffb547; --violet:#c792ea;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--text);font-family:"Segoe UI",Roboto,Ubuntu,Arial,sans-serif;overflow:hidden}
+  .slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:5vh 7vw;opacity:0;transform:translateX(40px);transition:opacity .4s,transform .4s;pointer-events:none}
+  .slide.active{opacity:1;transform:none;pointer-events:auto}
+  .kicker{font-size:clamp(14px,1.6vw,20px);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:1.2vh;font-weight:600}
+  h1{font-size:clamp(34px,5.6vw,76px);line-height:1.08}
+  h2{font-size:clamp(28px,3.6vw,50px);line-height:1.15;margin-bottom:3vh}
+  p,li{font-size:clamp(17px,1.9vw,26px);line-height:1.45}
+  .muted{color:var(--muted)}
+  .fut{color:var(--green)} .sumo{color:var(--red)} .test{color:var(--blue)} .amb{color:var(--amber)}
+  .row{display:flex;gap:2.4vw;flex-wrap:wrap}
+  .card{flex:1;min-width:220px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:2.6vh 1.8vw}
+  .card h3{font-size:clamp(20px,2.2vw,32px);margin-bottom:1vh}
+  .card.t{border-top:6px solid var(--blue)} .card.f{border-top:6px solid var(--green)} .card.s{border-top:6px solid var(--red)}
+  pre{background:#0a111c;border:1px solid var(--line);border-radius:12px;padding:2vh 1.6vw;font:clamp(14px,1.55vw,22px)/1.5 "Ubuntu Mono",Consolas,monospace;overflow:auto;white-space:pre}
+  .kw{color:var(--violet)} .cm{color:#6f7f99;font-style:italic} .num{color:var(--amber)} .str{color:var(--green)} .pp{color:var(--blue)}
+  .hl{background:rgba(62,207,122,.18);display:inline-block;width:100%;border-left:3px solid var(--green)}
+  table{border-collapse:collapse;width:100%;font-size:clamp(15px,1.7vw,24px)}
+  th,td{padding:1vh 1vw;border-bottom:1px solid var(--line);text-align:left}
+  th{color:var(--muted);font-weight:600}
+  code{font-family:"Ubuntu Mono",Consolas,monospace;background:#0a111c;padding:0 .3em;border-radius:5px}
+  .big{font-size:clamp(60px,11vw,160px);font-weight:800;line-height:1}
+  .warn{background:rgba(255,181,71,.12);border-left:6px solid var(--amber);border-radius:10px;padding:2vh 1.6vw}
+  .danger{background:rgba(255,107,90,.14);border-left:6px solid var(--red);border-radius:10px;padding:2vh 1.6vw}
+  svg{max-width:100%;height:auto}
+  .two{display:grid;grid-template-columns:1.1fr 1fr;gap:3vw;align-items:center}
+  @media (max-width:800px){.two{grid-template-columns:1fr}}
+  ul.clean{list-style:none} ul.clean li{margin:1.2vh 0;padding-left:1.4em;position:relative}
+  ul.clean li::before{content:"▸";position:absolute;left:0;color:var(--blue)}
+  .nav{position:fixed;bottom:2vh;right:2vw;display:flex;gap:10px;align-items:center;z-index:10}
+  .nav button{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;width:44px;height:40px;font-size:20px;cursor:pointer}
+  .nav span{color:var(--muted);font-size:15px;min-width:60px;text-align:center}
+  .bar{position:fixed;top:0;left:0;height:4px;background:linear-gradient(90deg,var(--blue),var(--green),var(--red));transition:width .3s;z-index:10}
+  .sec{position:fixed;bottom:2.4vh;left:2vw;color:var(--muted);font-size:14px;z-index:10}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="sec" id="sec"></div>
+
+<!-- 1 -->
+<section class="slide" data-sec="Inicio">
+  <div class="kicker">ESETP N° 703 · 5° Electrónica · LNR</div>
+  <h1>Programación del robot<br><span class="test">Robotshield V2.1</span></h1>
+  <p class="muted" style="margin-top:3vh">Leer, entender y modificar los programas</p>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-sec="Inicio">
+  <h2>Una placa, tres programas</h2>
+  <div class="row">
+    <div class="card t"><h3 class="test">TestPlaca</h3><p>¿Está bien armado?</p><p class="muted">Se usa primero, siempre</p></div>
+    <div class="card f"><h3 class="fut">Fútbol</h3><p>Control remoto por Bluetooth</p><p class="muted">Lo maneja una persona</p></div>
+    <div class="card s"><h3 class="sumo">Mini Sumo</h3><p>Autónomo</p><p class="muted">El robot decide solo</p></div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-sec="Inicio">
+  <div class="kicker amb">Regla n.º 1</div>
+  <h2>Desconectar el HC-05<br>antes de subir el programa</h2>
+  <div class="two">
+    <p>El Bluetooth y el cable USB usan los <b>mismos pines: D0 y D1</b>.<br><br>Si el HC-05 está enchufado, <span class="amb">la carga falla</span>.</p>
+    <svg viewBox="0 0 400 200" font-family="Segoe UI,Arial" font-size="18">
+      <rect x="140" y="60" width="120" height="80" rx="10" fill="#18233a" stroke="#4ea3ff" stroke-width="2"/><text x="200" y="97" text-anchor="middle" fill="#eef2f8" font-weight="700">Arduino</text><text x="200" y="120" text-anchor="middle" fill="#9aa8bf" font-size="15">D0 / D1</text>
+      <rect x="0" y="75" width="90" height="50" rx="8" fill="#18233a" stroke="#9aa8bf"/><text x="45" y="106" text-anchor="middle" fill="#eef2f8">USB</text>
+      <rect x="310" y="75" width="90" height="50" rx="8" fill="#18233a" stroke="#ff6b5a"/><text x="355" y="106" text-anchor="middle" fill="#eef2f8">HC-05</text>
+      <line x1="90" y1="100" x2="140" y2="100" stroke="#9aa8bf" stroke-width="3"/><line x1="260" y1="100" x2="310" y2="100" stroke="#ff6b5a" stroke-width="3"/>
+      <text x="285" y="55" text-anchor="middle" fill="#ff6b5a" font-size="34" font-weight="800">✕</text>
+    </svg>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-sec="Pines">
+  <h2>Mismo pin, distinto nombre</h2>
+  <table>
+    <tr><th>Pin</th><th class="test">TestPlaca</th><th class="fut">Fútbol</th><th class="sumo">Mini Sumo</th></tr>
+    <tr><td>D2 · SW2</td><td>BOTON_1</td><td>BOTON_BOCINA</td><td>BOTON_ARMAR</td></tr>
+    <tr><td>D12 · SW3</td><td>BOTON_2</td><td>BOTON_TURBO</td><td>BOTON_EMERGENCIA</td></tr>
+    <tr><td>D4 · LED</td><td>LED_1</td><td>LED_ENCENDIDO</td><td>LED_ARMADO</td></tr>
+    <tr><td>D7 · LED</td><td>LED_2</td><td>LED_ACTIVIDAD</td><td>LED_BUSQUEDA</td></tr>
+    <tr><td>D13 · LED</td><td>LED_3</td><td>LED_TURBO</td><td>LED_EVASION</td></tr>
+    <tr><td>D9 D10 / D3 D11</td><td>MOTOR_1 / 2</td><td colspan="2">MOTOR_IZQ / MOTOR_DER</td></tr>
+  </table>
+  <p class="muted" style="margin-top:2vh"><code>#define</code> = un apodo que dice <b>para qué</b> se usa el pin</p>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-sec="Estructura">
+  <h2>Anatomía de un programa</h2>
+  <svg viewBox="0 0 900 330" font-family="Segoe UI,Arial" font-size="22">
+    <g>
+      <rect x="0" y="0" width="900" height="66" rx="10" fill="#18233a" stroke="#4ea3ff" stroke-width="2"/><text x="24" y="42" fill="#4ea3ff" font-weight="700">#define</text><text x="260" y="42" fill="#eef2f8">apodos de los pines</text>
+      <rect x="0" y="84" width="900" height="66" rx="10" fill="#18233a" stroke="#ffb547" stroke-width="2"/><text x="24" y="126" fill="#ffb547" font-weight="700">const / variables</text><text x="260" y="126" fill="#eef2f8">números para ajustar · memoria</text>
+      <rect x="0" y="168" width="900" height="66" rx="10" fill="#18233a" stroke="#3ecf7a" stroke-width="2"/><text x="24" y="210" fill="#3ecf7a" font-weight="700">setup()</text><text x="260" y="210" fill="#eef2f8">corre UNA vez al encender</text>
+      <rect x="0" y="252" width="900" height="66" rx="10" fill="#18233a" stroke="#ff6b5a" stroke-width="2"/><text x="24" y="294" fill="#ff6b5a" font-weight="700">loop()</text><text x="260" y="294" fill="#eef2f8">se repite SIN PARAR  ↻</text>
+    </g>
+  </svg>
+  <p class="muted" style="margin-top:2vh">Las demás pestañas <code>.ino</code> se juntan en un solo programa al compilar</p>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-sec="TestPlaca">
+  <div class="kicker test">TestPlaca</div>
+  <h2>Prueba todo, en orden</h2>
+  <svg viewBox="0 0 1000 170" font-family="Segoe UI,Arial" font-size="20">
+    <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#4ea3ff"/></marker></defs>
+    <g fill="#18233a" stroke="#4ea3ff" stroke-width="2">
+      <circle cx="70" cy="70" r="58"/><circle cx="270" cy="70" r="58"/><circle cx="470" cy="70" r="58"/><circle cx="670" cy="70" r="58"/><circle cx="870" cy="70" r="58"/>
+    </g>
+    <g text-anchor="middle" font-size="36"><text x="70" y="84">💡</text><text x="270" y="84">🔘</text><text x="470" y="84">📡</text><text x="670" y="84">⚙️</text><text x="870" y="84">📶</text></g>
+    <g text-anchor="middle" fill="#eef2f8"><text x="70" y="160">LEDs</text><text x="270" y="160">Pulsadores</text><text x="470" y="160">Ultrasónico</text><text x="670" y="160">Motores</text><text x="870" y="160">Bluetooth</text></g>
+    <g stroke="#4ea3ff" stroke-width="3" marker-end="url(#ar)"><line x1="130" y1="70" x2="206" y2="70"/><line x1="330" y1="70" x2="406" y2="70"/><line x1="530" y1="70" x2="606" y2="70"/><line x1="730" y1="70" x2="806" y2="70"/></g>
+  </svg>
+  <p style="margin-top:3vh">Monitor Serie a <b>9600</b> · ruedas en el aire · <b>RESET</b> para repetir</p>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-sec="TestPlaca">
+  <div class="kicker test">TestPlaca</div>
+  <div class="two">
+    <pre>===== TEST DE PLACA - ROBOTSHIELD V2.1 =====
+
+--- Test de pulsadores ---
+Boton 1 (D2): presionalo (10s de margen)...
+Boton 1 (D2): <span class="str">OK</span>
+Boton 2 (D12): <span style="color:#ff6b5a">no se detecto, revisar cableado.</span>
+
+--- Test de sensor ultrasonico (HC-SR04) ---
+Distancia: 12 cm
+<span style="color:#ff6b5a">Sin eco (sensor no conectado o fuera de rango).</span></pre>
+    <div>
+      <h2 style="font-size:clamp(24px,2.8vw,40px)">Si falla acá…</h2>
+      <p>…el problema es de <b class="amb">armado o soldadura</b>, no del programa.</p>
+      <p class="muted" style="margin-top:2vh">Arreglar antes de pasar a Fútbol o Mini Sumo.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-sec="Común">
+  <div class="kicker">Común a Fútbol y Mini Sumo</div>
+  <h2>Motores: un solo número</h2>
+  <svg viewBox="0 0 1000 150" font-family="Segoe UI,Arial" font-size="24">
+    <defs><linearGradient id="gg" x1="0" x2="1"><stop offset="0" stop-color="#ff6b5a"/><stop offset=".5" stop-color="#2b3a57"/><stop offset="1" stop-color="#3ecf7a"/></linearGradient></defs>
+    <rect x="30" y="30" width="940" height="30" rx="15" fill="url(#gg)"/>
+    <text x="30" y="105" fill="#ff6b5a" font-weight="700">−255</text><text x="30" y="138" fill="#9aa8bf" font-size="19">atrás a fondo</text>
+    <text x="500" y="105" text-anchor="middle" font-weight="700" fill="#eef2f8">0</text><text x="500" y="138" text-anchor="middle" fill="#9aa8bf" font-size="19">quieto</text>
+    <text x="970" y="105" text-anchor="end" fill="#3ecf7a" font-weight="700">+255</text><text x="970" y="138" text-anchor="end" fill="#9aa8bf" font-size="19">adelante a fondo</text>
+  </svg>
+  <pre style="margin-top:3vh">motorIzquierdo(<span class="num">150</span>);   motorDerecho(<span class="num">150</span>);    <span class="cm">// avanza</span>
+motorIzquierdo(<span class="num">-150</span>);  motorDerecho(<span class="num">150</span>);    <span class="cm">// gira a la izquierda</span></pre>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-sec="Común">
+  <div class="kicker">Común a Fútbol y Mini Sumo</div>
+  <h2>Pulsadores: un toque = una acción</h2>
+  <div class="two">
+    <div>
+      <p><code>INPUT_PULLUP</code> → presionado es <b class="amb">LOW</b></p>
+      <p style="margin-top:2vh">El <code>loop()</code> da miles de vueltas por segundo: hay que detectar el <b>momento</b> en que se presiona.</p>
+    </div>
+    <svg viewBox="0 0 440 200" font-family="Segoe UI,Arial" font-size="18">
+      <polyline points="10,40 150,40 150,140 330,140 330,40 430,40" fill="none" stroke="#4ea3ff" stroke-width="4"/>
+      <text x="20" y="28" fill="#9aa8bf">HIGH (suelto)</text><text x="170" y="170" fill="#9aa8bf">LOW (presionado)</text>
+      <circle cx="150" cy="90" r="14" fill="#3ecf7a"/><text x="150" y="196" text-anchor="middle" fill="#3ecf7a" font-weight="700">¡flanco! → actuar</text>
+    </svg>
+  </div>
+  <pre style="margin-top:3vh"><span class="kw">if</span> (estadoActual == <span class="kw">LOW</span> && estadoAnterior == <span class="kw">HIGH</span>) { <span class="cm">/* actuar */</span> }
+estadoAnterior = estadoActual;</pre>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-sec="Fútbol">
+  <div class="kicker fut">Fútbol</div>
+  <h1>Una letra<br><span class="fut">→ un movimiento</span></h1>
+  <svg viewBox="0 0 1000 120" font-family="Segoe UI,Arial" font-size="20" style="margin-top:4vh">
+    <defs><marker id="af" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#3ecf7a"/></marker></defs>
+    <g fill="#18233a" stroke="#3ecf7a" stroke-width="2"><rect x="0" y="20" width="160" height="80" rx="10"/><rect x="210" y="20" width="160" height="80" rx="10"/><rect x="420" y="20" width="200" height="80" rx="10"/><rect x="670" y="20" width="150" height="80" rx="10"/><rect x="870" y="20" width="130" height="80" rx="10"/></g>
+    <g text-anchor="middle" fill="#eef2f8"><text x="80" y="67">📱 Celular</text><text x="290" y="67">HC-05</text><text x="520" y="67">revisarBluetooth()</text><text x="745" y="67">avanzar()</text><text x="935" y="67">⚙️⚙️</text></g>
+    <g stroke="#3ecf7a" stroke-width="3" marker-end="url(#af)"><line x1="160" y1="60" x2="204" y2="60"/><line x1="370" y1="60" x2="414" y2="60"/><line x1="620" y1="60" x2="664" y2="60"/><line x1="820" y1="60" x2="864" y2="60"/></g>
+    <text x="185" y="14" text-anchor="middle" fill="#3ecf7a" font-weight="800" font-size="24">'F'</text>
+  </svg>
+</section>
+
+<!-- 11 -->
+<section class="slide" data-sec="Fútbol">
+  <div class="kicker fut">Fútbol · Futbol.ino</div>
+  <div class="two">
+    <pre><span class="kw">void</span> loop() {
+  revisarBotonBocina();
+  revisarBotonTurbo();
+  revisarBluetooth();
+}</pre>
+    <div>
+      <h2>Solo 3 líneas</h2>
+      <p>Cada vuelta revisa: <b>¿bocina?</b> <b>¿turbo?</b> <b>¿llegó una letra?</b></p>
+      <p class="muted" style="margin-top:2vh">El trabajo está en las otras pestañas.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-sec="Fútbol">
+  <div class="kicker fut">Fútbol · comandos</div>
+  <div class="two">
+    <table>
+      <tr><th>Letra</th><th>Acción</th><th>Izq</th><th>Der</th></tr>
+      <tr><td class="fut"><b>F</b></td><td>Avanzar</td><td>+</td><td>+</td></tr>
+      <tr><td class="fut"><b>B</b></td><td>Retroceder</td><td>−</td><td>−</td></tr>
+      <tr><td class="fut"><b>L</b></td><td>Izquierda</td><td>−</td><td>+</td></tr>
+      <tr><td class="fut"><b>R</b></td><td>Derecha</td><td>+</td><td>−</td></tr>
+      <tr><td class="fut"><b>S</b></td><td>Detener</td><td>0</td><td>0</td></tr>
+      <tr><td class="fut"><b>H</b></td><td>Bocina</td><td colspan="2">—</td></tr>
+    </table>
+    <div class="warn"><p><b>⚠ No frena solo.</b><br>La app tiene que enviar <b>S</b> al soltar el botón.</p></div>
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-sec="Fútbol">
+  <div class="kicker fut">Fútbol · modificación · Bluetooth.ino</div>
+  <h2>Agregar un comando: <span class="fut">T</span> = turbo</h2>
+  <pre>  <span class="kw">case</span> <span class="str">'H'</span>:
+    tocarBocina();
+    <span class="kw">break</span>;
+<span class="hl">  <span class="kw">case</span> <span class="str">'T'</span>:
+    modoTurbo = !modoTurbo;
+    digitalWrite(PIN_LED_TURBO, modoTurbo ? <span class="kw">HIGH</span> : <span class="kw">LOW</span>);
+    <span class="kw">break</span>;</span>
+  <span class="kw">default</span>:
+    <span class="kw">break</span>;</pre>
+  <p style="margin-top:2vh">1 Letra libre · 2 <code>case</code> + <code>break</code> · 3 ✔ Verificar · 4 Subir sin HC-05 · 5 Probar</p>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-sec="Mini Sumo">
+  <div class="kicker sumo">Mini Sumo</div>
+  <h1>Nadie lo maneja.<br><span class="sumo">Decide solo.</span></h1>
+  <p class="muted" style="margin-top:3vh">Para eso usa una <b>máquina de estados</b></p>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-sec="Mini Sumo">
+  <div class="kicker sumo">Mini Sumo · máquina de estados</div>
+  <svg viewBox="-6 -6 1012 412" font-family="Segoe UI,Arial" font-size="20">
+    <defs>
+      <marker id="as" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#eef2f8"/></marker>
+      <marker id="ar2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#ff6b5a"/></marker>
+    </defs>
+    <g stroke-width="3">
+      <rect x="0" y="50" width="170" height="80" rx="40" fill="#18233a" stroke="#9aa8bf"/>
+      <rect x="250" y="50" width="220" height="80" rx="40" fill="#18233a" stroke="#ffb547"/>
+      <rect x="560" y="50" width="180" height="80" rx="40" fill="#18233a" stroke="#4ea3ff"/>
+      <rect x="820" y="50" width="180" height="80" rx="40" fill="#18233a" stroke="#ff6b5a"/>
+      <rect x="690" y="260" width="200" height="80" rx="40" fill="#18233a" stroke="#ff6b5a" stroke-dasharray="8 5"/>
+    </g>
+    <g text-anchor="middle" fill="#eef2f8" font-weight="700">
+      <text x="85" y="97">ESPERA</text><text x="360" y="97">CUENTA</text><text x="650" y="97">BÚSQUEDA</text><text x="910" y="97">ATAQUE</text><text x="790" y="307">EVASIÓN</text>
+    </g>
+    <g stroke="#eef2f8" stroke-width="2.5" fill="none" marker-end="url(#as)">
+      <line x1="170" y1="90" x2="244" y2="90"/><line x1="470" y1="90" x2="554" y2="90"/>
+      <line x1="740" y1="75" x2="814" y2="75"/><line x1="820" y1="110" x2="746" y2="110"/>
+      <line x1="600" y1="130" x2="705" y2="256"/><line x1="770" y1="258" x2="700" y2="136"/>
+      <path d="M930 130 C 960 200 930 250 880 272"/>
+    </g>
+    <g fill="#9aa8bf" font-size="17" text-anchor="middle">
+      <text x="207" y="78">SW2</text><text x="512" y="78">5 bips</text>
+      <text x="777" y="62">rival</text><text x="780" y="132">perdido</text>
+      <text x="610" y="210" fill="#ff6b5a">borde</text><text x="775" y="195">listo</text><text x="975" y="215" fill="#ff6b5a">borde</text>
+    </g>
+    <path d="M990 370 L 85 370 L 85 136" fill="none" stroke="#ff6b5a" stroke-width="2.5" stroke-dasharray="6 5" marker-end="url(#ar2)"/>
+    <text x="500" y="396" text-anchor="middle" fill="#ff6b5a" font-weight="700" font-size="19">SW3 emergencia → ESPERA (desde cualquier estado)</text>
+  </svg>
+</section>
+
+<!-- 16 -->
+<section class="slide" data-sec="Mini Sumo">
+  <div class="kicker sumo">Mini Sumo · MiniSumo.ino · loop()</div>
+  <h2>El orden es la prioridad</h2>
+  <div class="row">
+    <div class="card s"><div class="big sumo">1</div><h3>¿Emergencia?</h3><p class="muted">SW3 → ESPERA</p></div>
+    <div class="card" style="border-top:6px solid var(--amber)"><div class="big amb">2</div><h3>¿Borde?</h3><p class="muted">no salirse del ring</p></div>
+    <div class="card t"><div class="big test">3</div><h3>Buscar / atacar</h3><p class="muted">recién ahora</p></div>
+  </div>
+  <p style="margin-top:3vh" class="muted">No cambiar este orden en el <code>loop()</code></p>
+</section>
+
+<!-- 17 -->
+<section class="slide" data-sec="Mini Sumo">
+  <div class="kicker sumo">Mini Sumo · números para ajustar</div>
+  <pre><span class="kw">const int</span> VELOCIDAD_BUSQUEDA = <span class="num">100</span>;      <span class="cm">// giro buscando</span>
+<span class="kw">const int</span> VELOCIDAD_ATAQUE   = <span class="num">255</span>;      <span class="cm">// embestida</span>
+<span class="kw">const int</span> VELOCIDAD_EVASION  = <span class="num">180</span>;      <span class="cm">// escape del borde</span>
+
+<span class="kw">const int</span> DISTANCIA_DETECCION_CM = <span class="num">40</span>;  <span class="cm">// "veo al rival"</span>
+<span class="kw">const int</span> UMBRAL_BORDE = <span class="num">500</span>;           <span class="cm">// negro | blanco</span>
+
+<span class="pp">#define</span> CHEQUEAR_BORDE <span class="kw">false</span>             <span class="cm">// ⚠</span></pre>
+  <div class="danger" style="margin-top:2.5vh"><p><b>CHEQUEAR_BORDE = false</b> → el robot no ve el borde. <b>Poner en true para competir.</b></p></div>
+</section>
+
+<!-- 18 -->
+<section class="slide" data-sec="Mini Sumo">
+  <div class="kicker sumo">Mini Sumo · calibración</div>
+  <h2>Encontrar el umbral del borde</h2>
+  <svg viewBox="0 0 1000 150" font-family="Segoe UI,Arial" font-size="22">
+    <rect x="0" y="40" width="1000" height="36" rx="6" fill="#2b3a57"/>
+    <rect x="60" y="30" width="200" height="56" rx="8" fill="#000" stroke="#9aa8bf"/><text x="160" y="66" text-anchor="middle" fill="#eef2f8">negro ≈ 150</text>
+    <rect x="740" y="30" width="200" height="56" rx="8" fill="#f5f5f5"/><text x="840" y="66" text-anchor="middle" fill="#0f1724">blanco ≈ 850</text>
+    <line x1="500" y1="10" x2="500" y2="110" stroke="#ffb547" stroke-width="4"/><text x="500" y="140" text-anchor="middle" fill="#ffb547" font-weight="700">UMBRAL = 500</text>
+  </svg>
+  <ul class="clean" style="margin-top:2vh">
+    <li><code>MODO_DEBUG_SENSORES = true</code> → Monitor Serie</li>
+    <li>Anotar valores sobre negro y sobre blanco</li>
+    <li>Umbral a mitad de camino · calibrar <b>en el ring de la competencia</b></li>
+  </ul>
+  <p class="muted" style="margin-top:1vh">Valores de ejemplo: cada sensor da números distintos.</p>
+</section>
+
+<!-- 19 -->
+<section class="slide" data-sec="Mini Sumo">
+  <div class="kicker sumo">Mini Sumo · modificaciones simples</div>
+  <div class="row">
+    <div class="card s"><h3>Buscar para el otro lado</h3><pre>motorIzquierdo(<span class="num">-</span>VEL…);
+motorDerecho(VEL…);</pre><p class="muted">invertir signos en <code>girarBuscando()</code></p></div>
+    <div class="card s"><h3>Bip al ver al rival</h3><pre>tone(PIN_BUZZER,
+     <span class="num">3000</span>, <span class="num">50</span>);</pre><p class="muted">en <code>manejarBusqueda()</code></p></div>
+    <div class="card s"><h3>Ver más cerca</h3><pre>DISTANCIA_DETECCION_CM
+  = <span class="num">30</span>;</pre><p class="muted">el ring es chico</p></div>
+  </div>
+</section>
+
+<!-- 20 -->
+<section class="slide" data-sec="Cierre">
+  <div class="kicker">Para pensar</div>
+  <h2>¿Qué sucede si…</h2>
+  <ul class="clean">
+    <li>…se presiona SW3 <b>durante la cuenta regresiva</b>? <span class="muted">(mirar los <code>delay()</code>)</span></li>
+    <li>…el Mini Sumo revisa al rival <b>antes</b> que el borde?</li>
+    <li>…se corta el Bluetooth mientras el robot de Fútbol avanza?</li>
+  </ul>
+</section>
+
+<!-- 21 -->
+<section class="slide" data-sec="Cierre">
+  <h1>A programar.</h1>
+  <p class="muted" style="margin-top:3vh">1 TestPlaca → 2 Fútbol o Mini Sumo → 3 Una modificación propia</p>
+</section>
+
+<div class="nav"><button id="prev" aria-label="Anterior">←</button><span id="num"></span><button id="next" aria-label="Siguiente">→</button></div>
+<script>
+  const slides=[...document.querySelectorAll('.slide')];let i=0;
+  function show(n){i=Math.max(0,Math.min(slides.length-1,n));slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    document.getElementById('num').textContent=(i+1)+' / '+slides.length;
+    document.getElementById('bar').style.width=((i+1)/slides.length*100)+'%';
+    document.getElementById('sec').textContent=slides[i].dataset.sec||'';
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}}
+  document.getElementById('prev').onclick=()=>show(i-1);
+  document.getElementById('next').onclick=()=>show(i+1);
+  document.addEventListener('keydown',e=>{if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();show(i+1)}
+    if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();show(i-1)}
+    if(e.key==='Home')show(0); if(e.key==='End')show(slides.length-1);
+    if(e.key==='f'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}});
+  let tx=null;document.addEventListener('touchstart',e=>tx=e.touches[0].clientX);
+  document.addEventListener('touchend',e=>{if(tx===null)return;const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)show(i+(d<0?1:-1));tx=null});
+  show(parseInt(location.hash.slice(1))-1||0);
+</script>
+</body>
+</html>
